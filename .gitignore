@@ -1,40 +1,32 @@
-# Don't commit sensitive information
-config.py
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-*.egg-info/
-dist/
-build/
-
-# Virtual environments
-venv/
 env/
-ENV/
+venv/
+*.egg-info/
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Temporary files
+# Only ignore temporary files
 *.log
 *.tmp
-/tmp/
-*.webm
-*.wav
+*.swp
+*.bak
 
 # Vosk model (too large for git)
 model/
+
+# Saved person encodings (generated at runtime)
+target_person.pkl
 
 # Artifacts (local only)
 .gemini/

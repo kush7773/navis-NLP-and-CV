@@ -98,170 +98,232 @@ def check_follow_command(text):
     return None
 
 def generate_frames():
-    """Generate camera frames with human detection and following"""
-    global show_face_detection, follow_mode_active
+    """Generate video frames with face detection and follow mode"""
+    global show_face_detection, follow_mode_active, target_person_encodings
     
     # Load both face and full-body detectors
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haascade_fullbody.xml')
-    upper_body_cascade = cv2.CascadeClassifier(cv2.data.haascades + 'haascade_upperbody.xml')
+    body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
+    upper_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_upperbody.xml')
     
     while True:
         if not cap:
             break
             
-        success, frame = cap.read()
-        if not success:
+        ret, frame = cap.read()
+        if not ret:
             break
         
-        frame_center_x = frame.shape[1] // 2
+        # Frame dimensions
+        frame_height, frame_width = frame.shape[:2]
+        frame_center_x = frame_width // 2
+        
+        # Tracking variables
         detected_human = False
         target_x = frame_center_x
         target_w = 0
+        distance_status = ""
+        distance_color = (255, 255, 255)
         
         # Apply human detection if enabled
         if show_face_detection or follow_mode_active:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             
-            # Try to detect humans (face, upper body, or full body)
-            faces = face_cascade.detectMultiScale(gray, 1.2, 5)
-            upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
-            full_bodies = body_cascade.detectMultiScale(gray, 1.1, 3)
-            
-            # Prioritize detections: face > upper body > full body
-            humans = []
-            
-            if len(faces) > 0:
-                humans = [(x, y, w, h, "FACE") for (x, y, w, h) in faces]
-            elif len(upper_bodies) > 0:
-                humans = [(x, y, w, h, "UPPER BODY") for (x, y, w, h) in upper_bodies]
-            elif len(full_bodies) > 0:
-                humans = [(x, y, w, h, "FULL BODY") for (x, y, w, h) in full_bodies]
-            
-            # Draw bounding boxes and track largest human
-            for (x, y, w, h, label) in humans:
-                detected_human = True
+            # ============================================
+            #   PERSON-SPECIFIC FACE RECOGNITION
+            # ============================================
+            if len(target_person_encodings) > 0:
+                # Use face recognition to find enrolled person
+                face_results = detect_and_match_faces(frame, target_person_encodings, match_threshold)
                 
-                # Track the largest/closest human (biggest bounding box)
-                if w > target_w:
-                    target_x = x + w // 2
-                    target_w = w
+                target_found = False
                 
-                color = (0, 255, 0) if follow_mode_active else (0, 165, 255)
-                cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+                # Draw boxes for all detected faces
+                for result in face_results:
+                    x, y, w, h = result['bbox']
+                    is_target = result['is_target']
+                    confidence = result['confidence']
+                    matched_view = result['matched_view']
+                    
+                    if is_target:
+                        # GREEN box for enrolled person
+                        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+                        label = f"TARGET ({confidence:.2f})"
+                        if matched_view:
+                            label += f" - {matched_view.upper()}"
+                        cv2.putText(frame, label, (x, y-10),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                        
+                        # Update tracking coordinates
+                        target_x = x + w // 2
+                        target_w = w
+                        target_found = True
+                        detected_human = True
+                    else:
+                        # RED box for other people
+                        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                        cv2.putText(frame, f"OTHER ({confidence:.2f})", (x, y-10),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
                 
-                # Add label
-                status = "TRACKING" if follow_mode_active else "DETECTED"
-                cv2.putText(frame, f"{status} - {label}", (x, y-10), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                # If target not found by face, try body detection as fallback
+                if not target_found:
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    
+                    # Try face detection first
+                    faces = face_cascade.detectMultiScale(gray, 1.2, 5)
+                    upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
+                    full_bodies = body_cascade.detectMultiScale(gray, 1.1, 3)
+                    
+                    # Prioritize detections
+                    humans = []
+                    if len(faces) > 0:
+                        humans = [(x, y, w, h, "FACE") for (x, y, w, h) in faces]
+                    elif len(upper_bodies) > 0:
+                        humans = [(x, y, w, h, "UPPER BODY") for (x, y, w, h) in upper_bodies]
+                    elif len(full_bodies) > 0:
+                        humans = [(x, y, w, h, "FULL BODY") for (x, y, w, h) in full_bodies]
+                    
+                    # Track largest human (assume it's the target who turned away)
+                    for (x, y, w, h, label) in humans:
+                        if w > target_w:
+                            target_x = x + w // 2
+                            target_w = w
+                            detected_human = True
+                            
+                            # YELLOW box for body detection (face not visible)
+                            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 255), 2)
+                            cv2.putText(frame, f"{label} (TRACKING)", (x, y-10),
+                                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+            
+            else:
+                # No person enrolled - use standard body detection
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                
+                faces = face_cascade.detectMultiScale(gray, 1.2, 5)
+                upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
+                full_bodies = body_cascade.detectMultiScale(gray, 1.1, 3)
+                
+                # Prioritize detections
+                humans = []
+                if len(faces) > 0:
+                    humans = [(x, y, w, h, "FACE") for (x, y, w, h) in faces]
+                elif len(upper_bodies) > 0:
+                    humans = [(x, y, w, h, "UPPER BODY") for (x, y, w, h) in upper_bodies]
+                elif len(full_bodies) > 0:
+                    humans = [(x, y, w, h, "FULL BODY") for (x, y, w, h) in full_bodies]
+                
+                # Draw bounding boxes and track largest human
+                for (x, y, w, h, label) in humans:
+                    detected_human = True
+                    if w > target_w:
+                        target_x = x + w // 2
+                        target_w = w
+                    
+                    # BLUE box for standard detection
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                    cv2.putText(frame, label, (x, y-10),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
         
-        # Follow mode motor control with distance maintenance
+        # ============================================
+        #   FOLLOW MODE MOTOR CONTROL
+        # ============================================
         if follow_mode_active and detected_human and bot:
-            # Calculate horizontal error from center
             error = target_x - frame_center_x
             threshold = 50  # Horizontal deadzone
             
-            # Calculate distance based on bounding box size
-            # Larger box = closer, smaller box = farther
-            # Optimal range: 80-150 pixels width
+            # Distance thresholds (based on bounding box width)
             OPTIMAL_MIN_SIZE = 80   # Too close if bigger
             OPTIMAL_MAX_SIZE = 150  # Too far if smaller
             STOP_DISTANCE = 200     # Emergency stop if very close
             
-            # Distance control logic
             if target_w > STOP_DISTANCE:
-                # TOO CLOSE - Stop completely
+                # TOO CLOSE - STOP
                 bot.stop()
                 distance_status = "TOO CLOSE - STOPPED"
                 distance_color = (0, 0, 255)  # Red
                 
             elif target_w > OPTIMAL_MIN_SIZE:
-                # Good distance but might be getting close
-                # Just turn to keep centered, don't move forward
+                # GOOD DISTANCE - Only turn to center
                 if abs(error) < threshold:
-                    # Centered and good distance - stop
                     bot.stop()
-                    distance_status = "GOOD DISTANCE - CENTERED"
+                    distance_status = "OPTIMAL - CENTERED"
                     distance_color = (0, 255, 0)  # Green
-                elif error > threshold:
-                    # Turn right (in place)
-                    bot.drive(TURN_SPEED // 2, -TURN_SPEED // 2)
+                elif error > 0:
+                    bot.drive(-TURN_SPEED, TURN_SPEED)
                     distance_status = "TURNING RIGHT"
-                    distance_color = (0, 255, 255)  # Yellow
+                    distance_color = (255, 255, 0)  # Yellow
                 else:
-                    # Turn left (in place)
-                    bot.drive(-TURN_SPEED // 2, TURN_SPEED // 2)
+                    bot.drive(TURN_SPEED, -TURN_SPEED)
                     distance_status = "TURNING LEFT"
-                    distance_color = (0, 255, 255)  # Yellow
+                    distance_color = (255, 255, 0)  # Yellow
                     
             elif target_w < OPTIMAL_MAX_SIZE:
-                # TOO FAR - Move forward while turning
+                # TOO FAR - Move forward
                 if abs(error) < threshold:
-                    # Centered - move forward
                     bot.drive(AUTO_SPEED, AUTO_SPEED)
                     distance_status = "MOVING FORWARD"
-                    distance_color = (0, 255, 0)  # Green
-                elif error > threshold:
-                    # Turn right while moving forward
+                    distance_color = (0, 255, 255)  # Cyan
+                elif error > 0:
                     bot.drive(AUTO_SPEED, AUTO_SPEED // 2)
                     distance_status = "FORWARD + RIGHT"
-                    distance_color = (0, 255, 255)  # Yellow
+                    distance_color = (0, 255, 255)  # Cyan
                 else:
-                    # Turn left while moving forward
                     bot.drive(AUTO_SPEED // 2, AUTO_SPEED)
                     distance_status = "FORWARD + LEFT"
-                    distance_color = (0, 255, 255)  # Yellow
-            else:
-                # In optimal range
-                if abs(error) < threshold:
-                    # Perfect - centered and good distance
-                    bot.stop()
-                    distance_status = "OPTIMAL - FOLLOWING"
-                    distance_color = (0, 255, 0)  # Green
-                elif error > threshold:
-                    # Just turn right
-                    bot.drive(TURN_SPEED // 2, -TURN_SPEED // 2)
-                    distance_status = "ADJUSTING RIGHT"
-                    distance_color = (0, 255, 255)  # Yellow
-                else:
-                    # Just turn left
-                    bot.drive(-TURN_SPEED // 2, TURN_SPEED // 2)
-                    distance_status = "ADJUSTING LEFT"
-                    distance_color = (0, 255, 255)  # Yellow
+                    distance_color = (0, 255, 255)  # Cyan
                     
+            else:
+                # IN OPTIMAL RANGE - Fine adjustments
+                if abs(error) < threshold:
+                    bot.stop()
+                    distance_status = "OPTIMAL - CENTERED"
+                    distance_color = (0, 255, 0)  # Green
+                elif error > 0:
+                    bot.drive(-TURN_SPEED, TURN_SPEED)
+                    distance_status = "ADJUSTING RIGHT"
+                    distance_color = (255, 255, 0)  # Yellow
+                else:
+                    bot.drive(TURN_SPEED, -TURN_SPEED)
+                    distance_status = "ADJUSTING LEFT"
+                    distance_color = (255, 255, 0)  # Yellow
+        
         elif follow_mode_active and not detected_human and bot:
-            # Lost human - stop and look around slowly
-            bot.drive(30, -30)  # Slow turn to search
+            # Lost target - stop and search
+            bot.stop()
             distance_status = "SEARCHING..."
             distance_color = (255, 165, 0)  # Orange
-        else:
-            distance_status = None
-            distance_color = None
         
-        # Add status overlay
-        status_text = "FOLLOW MODE: ON" if follow_mode_active else "MANUAL CONTROL"
-        cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
-                   0.7, (0, 255, 0) if follow_mode_active else (255, 255, 255), 2)
-        
+        # ============================================
+        #   VISUAL OVERLAY
+        # ============================================
         if follow_mode_active:
+            # Show follow mode status
+            cv2.putText(frame, "FOLLOW MODE: ON", (10, 30),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            
             if detected_human and distance_status:
                 # Show distance status
-                cv2.putText(frame, distance_status, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
-                           0.6, distance_color, 2)
+                cv2.putText(frame, distance_status, (10, 60),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, distance_color, 2)
                 # Show distance indicator
                 distance_text = f"Distance: {target_w}px"
-                cv2.putText(frame, distance_text, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 
-                           0.5, (255, 255, 255), 1)
+                cv2.putText(frame, distance_text, (10, 90),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
             else:
                 tracking_status = "SEARCHING..."
-                cv2.putText(frame, tracking_status, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
-                           0.6, (255, 165, 0), 2)
+                cv2.putText(frame, tracking_status, (10, 60),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 165, 0), 2)
         
+        # Person enrollment status
+        if len(target_person_encodings) > 0:
+            enrolled_text = f"Enrolled: {target_person_name} ({len(target_person_encodings)} views)"
+            cv2.putText(frame, enrolled_text, (10, frame_height - 20),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 136), 1)
+        
+        # Encode frame
         ret, buffer = cv2.imencode('.jpg', frame)
-        frame_bytes = buffer.tobytes()
-        
+        frame = buffer.tobytes()
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 @app.route('/')
 def index():
