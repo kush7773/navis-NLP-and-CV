@@ -20,7 +20,9 @@ from config import (
     RASPBERRY_PI_IP,
     SERIAL_PORT,
     SERIAL_BAUD,
-    MANUAL_SPEED
+    MANUAL_SPEED,
+    AUTO_SPEED,
+    TURN_SPEED
 )
 import subprocess
 import threading
@@ -71,8 +73,13 @@ def check_follow_command(text):
     return None
 
 def generate_frames():
-    """Generate camera frames with optional face detection"""
+    """Generate camera frames with human detection and following"""
     global show_face_detection, follow_mode_active
+    
+    # Load both face and full-body detectors
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
+    upper_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_upperbody.xml')
     
     while True:
         if not cap:
@@ -82,22 +89,75 @@ def generate_frames():
         if not success:
             break
         
-        # Apply face detection if enabled
-        if show_face_detection:
+        frame_center_x = frame.shape[1] // 2
+        detected_human = False
+        target_x = frame_center_x
+        target_w = 0
+        
+        # Apply human detection if enabled
+        if show_face_detection or follow_mode_active:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(gray, 1.2, 5)
             
-            for (x, y, w, h) in faces:
+            # Try to detect humans (face, upper body, or full body)
+            faces = face_cascade.detectMultiScale(gray, 1.2, 5)
+            upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
+            full_bodies = body_cascade.detectMultiScale(gray, 1.1, 3)
+            
+            # Prioritize detections: face > upper body > full body
+            humans = []
+            
+            if len(faces) > 0:
+                humans = [(x, y, w, h, "FACE") for (x, y, w, h) in faces]
+            elif len(upper_bodies) > 0:
+                humans = [(x, y, w, h, "UPPER BODY") for (x, y, w, h) in upper_bodies]
+            elif len(full_bodies) > 0:
+                humans = [(x, y, w, h, "FULL BODY") for (x, y, w, h) in full_bodies]
+            
+            # Draw bounding boxes and track largest human
+            for (x, y, w, h, label) in humans:
+                detected_human = True
+                
+                # Track the largest/closest human (biggest bounding box)
+                if w > target_w:
+                    target_x = x + w // 2
+                    target_w = w
+                
                 color = (0, 255, 0) if follow_mode_active else (0, 165, 255)
                 cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
                 
                 # Add label
-                label = "TRACKING" if follow_mode_active else "DETECTED"
-                cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                status = "TRACKING" if follow_mode_active else "DETECTED"
+                cv2.putText(frame, f"{status} - {label}", (x, y-10), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+        
+        # Follow mode motor control
+        if follow_mode_active and detected_human and bot:
+            # Calculate error from center
+            error = target_x - frame_center_x
+            threshold = 50  # Deadzone
+            
+            if abs(error) < threshold:
+                # Human is centered - move forward
+                bot.drive(AUTO_SPEED, AUTO_SPEED)
+            elif error > threshold:
+                # Human is to the right - turn right
+                bot.drive(TURN_SPEED, -TURN_SPEED)
+            else:
+                # Human is to the left - turn left
+                bot.drive(-TURN_SPEED, TURN_SPEED)
+        elif follow_mode_active and not detected_human and bot:
+            # Lost human - stop and look around slowly
+            bot.drive(30, -30)  # Slow turn to search
         
         # Add status overlay
         status_text = "FOLLOW MODE: ON" if follow_mode_active else "MANUAL CONTROL"
-        cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0) if follow_mode_active else (255, 255, 255), 2)
+        cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+                   0.7, (0, 255, 0) if follow_mode_active else (255, 255, 255), 2)
+        
+        if follow_mode_active:
+            tracking_status = "TRACKING" if detected_human else "SEARCHING..."
+            cv2.putText(frame, tracking_status, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
+                       0.6, (0, 255, 0) if detected_human else (255, 165, 0), 2)
         
         ret, buffer = cv2.imencode('.jpg', frame)
         frame_bytes = buffer.tobytes()
@@ -197,9 +257,13 @@ def audio_upload():
             response = "Stopping. Follow mode deactivated."
             
         else:
-            # Normal AI conversation
+            # Normal AI conversation - optimized for speed
             if llm:
-                response = llm.ask(text)
+                try:
+                    # Use shorter responses for faster processing
+                    response = llm.ask(text + " (answer in 20 words or less)")
+                except:
+                    response = "Sorry, I'm having trouble thinking right now."
             else:
                 response = "AI is not available."
         
