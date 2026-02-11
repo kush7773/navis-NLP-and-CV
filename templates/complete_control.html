@@ -2,651 +2,702 @@
 <html lang="en">
 
 <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <title>🤖 Navis Control Center</title>
-        <style>
-                * {
-                        margin: 0;
-                        padding: 0;
-                        box-sizing: border-box;
-                        -webkit-tap-highlight-color: transparent;
-                }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🤖 Navis Control Center</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-                body {
-                        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-                        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                        color: #fff;
-                        overflow-x: hidden;
-                        height: 100vh;
-                }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            overflow-x: hidden;
+            height: 100vh;
+        }
 
-                /* Header */
-                .header {
-                        background: rgba(0, 0, 0, 0.5);
-                        backdrop-filter: blur(10px);
-                        padding: 15px 20px;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        border-bottom: 2px solid #00d4ff;
-                        box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
-                }
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #00d4ff;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+        }
 
-                .logo {
-                        font-size: 24px;
-                        font-weight: bold;
-                        background: linear-gradient(135deg, #00d4ff, #00ff88);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-                }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
 
-                .status-badge {
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        font-size: 12px;
-                        font-weight: bold;
-                        border: 2px solid;
-                        transition: all 0.3s ease;
-                }
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid;
+            transition: all 0.3s ease;
+        }
 
-                .status-badge.active {
-                        background: rgba(0, 255, 136, 0.2);
-                        border-color: #00ff88;
-                        color: #00ff88;
-                        animation: glow-green 2s infinite;
-                }
+        .status-badge.active {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            color: #00ff88;
+            animation: glow-green 2s infinite;
+        }
 
-                .status-badge.inactive {
-                        background: rgba(255, 107, 107, 0.2);
-                        border-color: #ff6b6b;
-                        color: #ff6b6b;
-                }
+        .status-badge.inactive {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
 
-                @keyframes glow-green {
+        @keyframes glow-green {
 
-                        0%,
-                        100% {
-                                box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-                        }
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            }
 
-                        50% {
-                                box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
-                        }
-                }
+            50% {
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+            }
+        }
 
-                /* Main Container */
-                .container {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 15px;
-                        padding: 15px;
-                        height: calc(100vh - 70px);
-                }
+        /* Main Container */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 15px;
+            height: calc(100vh - 70px);
+        }
 
-                @media (max-width: 768px) {
-                        .container {
-                                grid-template-columns: 1fr;
-                                height: auto;
-                        }
-                }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
 
-                /* Panel Styling */
-                .panel {
-                        background: rgba(255, 255, 255, 0.05);
-                        backdrop-filter: blur(10px);
-                        border-radius: 20px;
-                        padding: 20px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                }
+        /* Panel Styling */
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
 
-                .panel-title {
-                        font-size: 18px;
-                        font-weight: bold;
-                        margin-bottom: 15px;
-                        color: #00d4ff;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                }
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #00d4ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-                /* Camera Feed */
-                .camera-panel {
-                        grid-row: span 2;
-                }
+        /* Camera Feed */
+        .camera-panel {
+            grid-row: span 2;
+        }
 
-                .camera-feed {
-                        width: 100%;
-                        border-radius: 15px;
-                        border: 2px solid #00d4ff;
-                        box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
-                        background: #000;
-                }
+        .camera-feed {
+            width: 100%;
+            border-radius: 15px;
+            border: 2px solid #00d4ff;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+            background: #000;
+        }
 
-                .camera-controls {
-                        display: flex;
-                        gap: 10px;
-                        margin-top: 15px;
-                }
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
 
-                .camera-btn {
-                        flex: 1;
-                        padding: 12px;
-                        border: 2px solid #00d4ff;
-                        background: rgba(0, 212, 255, 0.1);
-                        color: #00d4ff;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: bold;
-                        transition: all 0.3s ease;
-                }
+        .camera-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
 
-                .camera-btn:active {
-                        transform: scale(0.95);
-                        background: rgba(0, 212, 255, 0.3);
-                }
+        .camera-btn:active {
+            transform: scale(0.95);
+            background: rgba(0, 212, 255, 0.3);
+        }
 
-                .camera-btn.active {
-                        background: rgba(0, 212, 255, 0.3);
-                        box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-                }
+        .camera-btn.active {
+            background: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
 
-                /* Joystick Controls */
-                .joystick-container {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 15px;
-                }
+        /* Joystick Controls */
+        .joystick-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
 
-                .joystick {
-                        display: grid;
-                        grid-template-columns: repeat(3, 80px);
-                        grid-template-rows: repeat(3, 80px);
-                        gap: 10px;
-                        margin: 20px 0;
-                }
+        .joystick {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 10px;
+            margin: 20px 0;
+        }
 
-                .joystick-btn {
-                        border: 3px solid #00d4ff;
-                        background: rgba(0, 212, 255, 0.1);
-                        border-radius: 15px;
-                        cursor: pointer;
-                        font-size: 28px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        transition: all 0.2s ease;
-                        user-select: none;
-                        color: #00d4ff;
-                        font-weight: bold;
-                }
+        .joystick-btn {
+            border: 3px solid #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            user-select: none;
+            color: #00d4ff;
+            font-weight: bold;
+        }
 
-                .joystick-btn:active {
-                        transform: scale(0.9);
-                        background: rgba(0, 212, 255, 0.3);
-                        box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
-                }
+        .joystick-btn:active {
+            transform: scale(0.9);
+            background: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+        }
 
-                .joystick-btn.center {
-                        background: rgba(255, 107, 107, 0.2);
-                        border-color: #ff6b6b;
-                        color: #ff6b6b;
-                        font-size: 20px;
-                }
+        .joystick-btn.center {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+            font-size: 20px;
+        }
 
-                .emergency-stop {
-                        width: 100%;
-                        padding: 20px;
-                        background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-                        border: none;
-                        border-radius: 15px;
-                        color: white;
-                        font-size: 20px;
-                        font-weight: bold;
-                        cursor: pointer;
-                        box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
-                        transition: all 0.3s ease;
-                }
+        .emergency-stop {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+            transition: all 0.3s ease;
+        }
 
-                .emergency-stop:active {
-                        transform: scale(0.95);
-                        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.6);
-                }
+        .emergency-stop:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.6);
+        }
 
-                /* Voice Control */
-                .voice-panel {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 15px;
-                }
+        /* Voice Control */
+        .voice-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
 
-                .mic-button {
-                        width: 120px;
-                        height: 120px;
-                        border-radius: 50%;
-                        border: none;
-                        background: linear-gradient(135deg, #f093fb, #f5576c);
-                        color: white;
-                        font-size: 48px;
-                        cursor: pointer;
-                        box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);
-                        transition: all 0.3s ease;
-                        margin: 0 auto;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                }
+        .mic-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+            font-size: 48px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);
+            transition: all 0.3s ease;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-                .mic-button:active {
-                        transform: scale(0.9);
-                }
+        .mic-button:active {
+            transform: scale(0.9);
+        }
 
-                .mic-button.recording {
-                        background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-                        animation: pulse 1.5s infinite;
-                }
+        .mic-button.recording {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            animation: pulse 1.5s infinite;
+        }
 
-                @keyframes pulse {
+        @keyframes pulse {
 
-                        0%,
-                        100% {
-                                transform: scale(1);
-                        }
+            0%,
+            100% {
+                transform: scale(1);
+            }
 
-                        50% {
-                                transform: scale(1.1);
-                        }
-                }
+            50% {
+                transform: scale(1.1);
+            }
+        }
 
-                .status-display {
-                        background: rgba(0, 0, 0, 0.3);
-                        padding: 15px;
-                        border-radius: 10px;
-                        min-height: 100px;
-                        font-size: 14px;
-                        line-height: 1.6;
-                }
+        .status-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 100px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
 
-                .text-input-group {
-                        display: flex;
-                        gap: 10px;
-                }
+        .text-input-group {
+            display: flex;
+            gap: 10px;
+        }
 
-                .text-input {
-                        flex: 1;
-                        padding: 12px;
-                        border: 2px solid rgba(255, 255, 255, 0.2);
-                        background: rgba(0, 0, 0, 0.3);
-                        border-radius: 10px;
-                        color: white;
-                        font-size: 14px;
-                }
+        .text-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+        }
 
-                .text-input:focus {
-                        outline: none;
-                        border-color: #00d4ff;
-                        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-                }
+        .text-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
 
-                .send-btn {
-                        padding: 12px 20px;
-                        border: none;
-                        background: #00d4ff;
-                        color: #1a1a2e;
-                        border-radius: 10px;
-                        font-weight: bold;
-                        cursor: pointer;
-                        transition: all 0.3s ease;
-                }
+        .send-btn {
+            padding: 12px 20px;
+            border: none;
+            background: #00d4ff;
+            color: #1a1a2e;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-                .send-btn:active {
-                        transform: scale(0.95);
-                }
+        .send-btn:active {
+            transform: scale(0.95);
+        }
 
-                /* Quick Commands */
-                .quick-commands {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
-                }
+        /* Quick Commands */
+        .quick-commands {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
 
-                .quick-cmd {
-                        padding: 12px;
-                        border: 2px solid;
-                        background: rgba(255, 255, 255, 0.05);
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: bold;
-                        transition: all 0.3s ease;
-                        text-align: center;
-                }
+        .quick-cmd {
+            padding: 12px;
+            border: 2px solid;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
 
-                .quick-cmd.follow {
-                        border-color: #00ff88;
-                        color: #00ff88;
-                }
+        .quick-cmd.follow {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
 
-                .quick-cmd.stop {
-                        border-color: #ff6b6b;
-                        color: #ff6b6b;
-                }
+        .quick-cmd.stop {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
 
-                .quick-cmd:active {
-                        transform: scale(0.95);
-                        background: rgba(255, 255, 255, 0.1);
-                }
+        .quick-cmd:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.1);
+        }
 
-                .spinner {
-                        display: inline-block;
-                        width: 16px;
-                        height: 16px;
-                        border: 3px solid rgba(255, 255, 255, 0.3);
-                        border-top-color: white;
-                        border-radius: 50%;
-                        animation: spin 1s linear infinite;
-                }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
 
-                @keyframes spin {
-                        to {
-                                transform: rotate(360deg);
-                        }
-                }
-        </style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 
 <body>
-        <!-- Header -->
-        <div class="header">
-                <div class="logo">🤖 NAVIS CONTROL CENTER</div>
-                <div class="status-badge inactive" id="followStatus">⏸️ MANUAL</div>
+    <div class="header">
+        <div class="logo">🤖 NAVIS CONTROL CENTER</div>
+        <div class="status-badge inactive" id="followStatus">⏸️ MANUAL</div>
+    </div>
+
+    <div class="container">
+        <div class="panel camera-panel">
+            <div class="panel-title">📹 Live Camera Feed</div>
+            {% if camera_available %}
+            <img src="{{ url_for('video_feed') }}" class="camera-feed" alt="Camera Feed">
+            <div class="camera-controls">
+                <button class="camera-btn" id="faceDetectBtn" onclick="toggleFaceDetection()">
+                    👤 Face Detection
+                </button>
+            </div>
+            {% else %}
+            <div
+                style="background: #000; height: 300px; display: flex; align-items: center; justify-content: center; border-radius: 15px;">
+                <p>📹 Camera Not Available</p>
+            </div>
+            {% endif %}
         </div>
 
-        <!-- Main Container -->
-        <div class="container">
-                <!-- Camera Panel -->
-                <div class="panel camera-panel">
-                        <div class="panel-title">📹 Live Camera Feed</div>
-                        {% if camera_available %}
-                        <img src="{{ url_for('video_feed') }}" class="camera-feed" alt="Camera Feed">
-                        <div class="camera-controls">
-                                <button class="camera-btn" id="faceDetectBtn" onclick="toggleFaceDetection()">
-                                        👤 Face Detection
-                                </button>
-                        </div>
-                        {% else %}
-                        <div
-                                style="background: #000; height: 300px; display: flex; align-items: center; justify-content: center; border-radius: 15px;">
-                                <p>📹 Camera Not Available</p>
-                        </div>
-                        {% endif %}
+        <div class="panel">
+            <div class="panel-title">🕹️ Joystick Control</div>
+            <div class="joystick-container">
+                <div class="joystick">
+                    <div></div>
+                    
+                    <div class="joystick-btn" 
+                        onmousedown="startMoving('F')" 
+                        onmouseup="stopMoving()" 
+                        ontouchstart="startMoving('F')" 
+                        ontouchend="stopMoving()"
+                        onmouseleave="stopMoving()">↑</div>
+                    
+                    <div></div>
+
+                    <div class="joystick-btn" 
+                        onmousedown="startMoving('L')" 
+                        onmouseup="stopMoving()" 
+                        ontouchstart="startMoving('L')" 
+                        ontouchend="stopMoving()"
+                        onmouseleave="stopMoving()">←</div>
+                    
+                    <div class="joystick-btn center" onclick="stopMoving()">STOP</div>
+                    
+                    <div class="joystick-btn" 
+                        onmousedown="startMoving('R')" 
+                        onmouseup="stopMoving()" 
+                        ontouchstart="startMoving('R')" 
+                        ontouchend="stopMoving()"
+                        onmouseleave="stopMoving()">→</div>
+
+                    <div></div>
+                    
+                    <div class="joystick-btn" 
+                        onmousedown="startMoving('B')" 
+                        onmouseup="stopMoving()" 
+                        ontouchstart="startMoving('B')" 
+                        ontouchend="stopMoving()"
+                        onmouseleave="stopMoving()">↓</div>
+                    
+                    <div></div>
                 </div>
 
-                <!-- Joystick Control Panel -->
-                <div class="panel">
-                        <div class="panel-title">🕹️ Joystick Control</div>
-                        <div class="joystick-container">
-                                <div class="joystick">
-                                        <div></div>
-                                        <div class="joystick-btn" onmousedown="sendCommand('F')"
-                                                onmouseup="sendCommand('S')" ontouchstart="sendCommand('F')"
-                                                ontouchend="sendCommand('S')">↑</div>
-                                        <div></div>
-
-                                        <div class="joystick-btn" onmousedown="sendCommand('L')"
-                                                onmouseup="sendCommand('S')" ontouchstart="sendCommand('L')"
-                                                ontouchend="sendCommand('S')">←</div>
-                                        <div class="joystick-btn center" onclick="sendCommand('S')">STOP</div>
-                                        <div class="joystick-btn" onmousedown="sendCommand('R')"
-                                                onmouseup="sendCommand('S')" ontouchstart="sendCommand('R')"
-                                                ontouchend="sendCommand('S')">→</div>
-
-                                        <div></div>
-                                        <div class="joystick-btn" onmousedown="sendCommand('B')"
-                                                onmouseup="sendCommand('S')" ontouchstart="sendCommand('B')"
-                                                ontouchend="sendCommand('S')">↓</div>
-                                        <div></div>
-                                </div>
-
-                                <button class="emergency-stop" onclick="emergencyStop()">
-                                        🛑 EMERGENCY STOP
-                                </button>
-                        </div>
-                </div>
-
-                <!-- Voice Control Panel -->
-                <div class="panel voice-panel">
-                        <div class="panel-title">🎤 Voice Control</div>
-
-                        <button class="mic-button" id="micBtn">
-                                🎤
-                        </button>
-
-                        <div class="quick-commands">
-                                <button class="quick-cmd follow" onclick="quickCommand('follow me navis')">
-                                        🎯 Follow Me
-                                </button>
-                                <button class="quick-cmd stop" onclick="quickCommand('stop navis')">
-                                        ⏹️ Stop
-                                </button>
-                        </div>
-
-                        <div class="status-display" id="statusDisplay">
-                                <strong>Ready to listen...</strong>
-                                <p style="opacity: 0.7; margin-top: 10px;">
-                                        🎤 Hold mic button to speak<br>
-                                        🕹️ Use joystick for manual control<br>
-                                        🎯 Say "Follow me Navis" to activate tracking
-                                </p>
-                        </div>
-
-                        <div class="text-input-group">
-                                <input type="text" class="text-input" id="textInput"
-                                        placeholder="Type command or question...">
-                                <button class="send-btn" onclick="sendText()">Send</button>
-                        </div>
-                </div>
+                <button class="emergency-stop" onclick="emergencyStop()">
+                    🛑 EMERGENCY STOP
+                </button>
+            </div>
         </div>
 
-        <script>
-                let mediaRecorder;
-                let audioChunks = [];
-                const micBtn = document.getElementById('micBtn');
-                const statusDisplay = document.getElementById('statusDisplay');
-                const followStatus = document.getElementById('followStatus');
-                const faceDetectBtn = document.getElementById('faceDetectBtn');
+        <div class="panel voice-panel">
+            <div class="panel-title">🎤 Voice Control</div>
 
-                // Initialize microphone
-                async function initMicrophone() {
-                        try {
-                                const stream = await navigator.mediaDevices.getUserMedia({
-                                        audio: {
-                                                echoCancellation: true,
-                                                noiseSuppression: true,
-                                                autoGainControl: true
-                                        }
-                                });
+            <button class="mic-button" id="micBtn">
+                🎤
+            </button>
 
-                                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            <div class="quick-commands">
+                <button class="quick-cmd follow" onclick="quickCommand('follow me navis')">
+                    🎯 Follow Me
+                </button>
+                <button class="quick-cmd stop" onclick="quickCommand('stop navis')">
+                    ⏹️ Stop
+                </button>
+            </div>
 
-                                mediaRecorder.ondataavailable = (event) => {
-                                        if (event.data.size > 0) audioChunks.push(event.data);
-                                };
+            <div class="status-display" id="statusDisplay">
+                <strong>Ready to listen...</strong>
+                <p style="opacity: 0.7; margin-top: 10px;">
+                    🎤 Hold mic button to speak<br>
+                    🕹️ Use joystick for manual control<br>
+                    🎯 Say "Follow me Navis" to activate tracking
+                </p>
+            </div>
 
-                                mediaRecorder.onstop = async () => {
-                                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                                        audioChunks = [];
-                                        await sendAudio(audioBlob);
-                                };
-                        } catch (error) {
-                                console.error('Microphone error:', error);
-                                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Microphone access denied</div>';
-                        }
-                }
+            <div class="text-input-group">
+                <input type="text" class="text-input" id="textInput" placeholder="Type command or question...">
+                <button class="send-btn" onclick="sendText()">Send</button>
+            </div>
+        </div>
+    </div>
 
-                // Voice recording
-                micBtn.addEventListener('mousedown', startRecording);
-                micBtn.addEventListener('touchstart', startRecording);
-                micBtn.addEventListener('mouseup', stopRecording);
-                micBtn.addEventListener('touchend', stopRecording);
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        const micBtn = document.getElementById('micBtn');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const followStatus = document.getElementById('followStatus');
+        const faceDetectBtn = document.getElementById('faceDetectBtn');
 
-                function startRecording(e) {
-                        e.preventDefault();
-                        if (mediaRecorder && mediaRecorder.state === 'inactive') {
-                                audioChunks = [];
-                                mediaRecorder.start();
-                                micBtn.classList.add('recording');
-                                statusDisplay.innerHTML = '<strong>🎤 Listening...</strong>';
-                        }
-                }
+        // ============================================
+        //   NEW: CONTINUOUS MOVEMENT LOGIC
+        // ============================================
+        let moveInterval = null;
 
-                function stopRecording(e) {
-                        e.preventDefault();
-                        if (mediaRecorder && mediaRecorder.state === 'recording') {
-                                mediaRecorder.stop();
-                                micBtn.classList.remove('recording');
-                        }
-                }
+        function startMoving(cmd) {
+            // Prevent default touch behavior (scrolling/zoom)
+            if (event.type === 'touchstart') {
+                event.preventDefault();
+            }
 
-                // Send audio to server
-                async function sendAudio(audioBlob) {
-                        const formData = new FormData();
-                        formData.append('audio', audioBlob, 'recording.webm');
+            // 1. Send immediately so there is no lag
+            sendCommand(cmd);
 
-                        statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
+            // 2. Clear any existing timer
+            if (moveInterval) clearInterval(moveInterval);
 
-                        try {
-                                const response = await fetch('/audio_upload', { method: 'POST', body: formData });
-                                const result = await response.json();
+            // 3. Set a timer to REPEAT the command every 100ms
+            moveInterval = setInterval(() => {
+                sendCommand(cmd);
+            }, 100); 
+        }
 
-                                if (result.error) {
-                                        statusDisplay.innerHTML = `<div style="color: #ff6b6b;">❌ ${result.error}</div>`;
-                                } else {
-                                        statusDisplay.innerHTML = `
+        function stopMoving() {
+            // 1. Stop the timer
+            if (moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
+            }
+            // 2. Send STOP command once
+            sendCommand('S');
+        }
+
+        // ============================================
+        //   EXISTING LOGIC
+        // ============================================
+
+        // Initialize microphone
+        async function initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioChunks = [];
+                    await sendAudio(audioBlob);
+                };
+            } catch (error) {
+                console.error('Microphone error:', error);
+                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Microphone access denied</div>';
+            }
+        }
+
+        // Voice recording
+        micBtn.addEventListener('mousedown', startRecording);
+        micBtn.addEventListener('touchstart', startRecording);
+        micBtn.addEventListener('mouseup', stopRecording);
+        micBtn.addEventListener('touchend', stopRecording);
+
+        function startRecording(e) {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state === 'inactive') {
+                audioChunks = [];
+                mediaRecorder.start();
+                micBtn.classList.add('recording');
+                statusDisplay.innerHTML = '<strong>🎤 Listening...</strong>';
+            }
+        }
+
+        function stopRecording(e) {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                micBtn.classList.remove('recording');
+            }
+        }
+
+        // Send audio to server
+        async function sendAudio(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+
+            statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
+
+            try {
+                const response = await fetch('/audio_upload', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.error) {
+                    statusDisplay.innerHTML = `<div style="color: #ff6b6b;">❌ ${result.error}</div>`;
+                } else {
+                    statusDisplay.innerHTML = `
                         <p><strong>👤 You:</strong> ${result.transcription}</p>
                         <p><strong>🤖 Navis:</strong> ${result.response}</p>
                     `;
-                                        updateFollowStatus(result.follow_active);
-                                }
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Network error</div>';
-                        }
+                    updateFollowStatus(result.follow_active);
                 }
+            } catch (error) {
+                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Network error</div>';
+            }
+        }
 
-                // Joystick controls
-                async function sendCommand(cmd) {
-                        try {
-                                await fetch('/manual_control', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ command: cmd })
-                                });
-                        } catch (error) {
-                                console.error('Command error:', error);
-                        }
-                }
+        // Joystick controls (Modified to support continuous)
+        async function sendCommand(cmd) {
+            try {
+                // We use fetch but we don't await it to keep UI responsive during rapid fire
+                fetch('/manual_control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: cmd })
+                }).catch(err => console.error(err));
+            } catch (error) {
+                console.error('Command error:', error);
+            }
+        }
 
-                // Emergency stop
-                function emergencyStop() {
-                        sendCommand('S');
-                        statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">🛑 EMERGENCY STOP ACTIVATED</strong>';
-                }
+        // Emergency stop
+        function emergencyStop() {
+            stopMoving(); // Clear intervals first
+            sendCommand('S');
+            statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">🛑 EMERGENCY STOP ACTIVATED</strong>';
+        }
 
-                // Quick commands
-                async function quickCommand(text) {
-                        statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
+        // Quick commands
+        async function quickCommand(text) {
+            statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
 
-                        try {
-                                const response = await fetch('/text_chat', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ message: text })
-                                });
+            try {
+                const response = await fetch('/text_chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
 
-                                const result = await response.json();
-                                statusDisplay.innerHTML = `<p><strong>🤖 Navis:</strong> ${result.response}</p>`;
-                                updateFollowStatus(result.follow_active);
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Error</div>';
-                        }
-                }
+                const result = await response.json();
+                statusDisplay.innerHTML = `<p><strong>🤖 Navis:</strong> ${result.response}</p>`;
+                updateFollowStatus(result.follow_active);
+            } catch (error) {
+                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Error</div>';
+            }
+        }
 
-                // Text input
-                async function sendText() {
-                        const input = document.getElementById('textInput');
-                        const text = input.value.trim();
-                        if (!text) return;
+        // Text input
+        async function sendText() {
+            const input = document.getElementById('textInput');
+            const text = input.value.trim();
+            if (!text) return;
 
-                        statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
+            statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
 
-                        try {
-                                const response = await fetch('/text_chat', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ message: text })
-                                });
+            try {
+                const response = await fetch('/text_chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
 
-                                const result = await response.json();
-                                statusDisplay.innerHTML = `
+                const result = await response.json();
+                statusDisplay.innerHTML = `
                     <p><strong>👤 You:</strong> ${text}</p>
                     <p><strong>🤖 Navis:</strong> ${result.response}</p>
                 `;
-                                updateFollowStatus(result.follow_active);
-                                input.value = '';
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Error</div>';
-                        }
+                updateFollowStatus(result.follow_active);
+                input.value = '';
+            } catch (error) {
+                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Error</div>';
+            }
+        }
+
+        document.getElementById('textInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendText();
+        });
+
+        // Toggle face detection
+        async function toggleFaceDetection() {
+            try {
+                const response = await fetch('/toggle_face_detection', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.enabled) {
+                    faceDetectBtn.classList.add('active');
+                } else {
+                    faceDetectBtn.classList.remove('active');
                 }
+            } catch (error) {
+                console.error('Toggle error:', error);
+            }
+        }
 
-                document.getElementById('textInput').addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') sendText();
-                });
+        // Update follow status
+        function updateFollowStatus(isActive) {
+            if (isActive) {
+                followStatus.classList.remove('inactive');
+                followStatus.classList.add('active');
+                followStatus.innerHTML = '✅ FOLLOW MODE';
+            } else {
+                followStatus.classList.remove('active');
+                followStatus.classList.add('inactive');
+                followStatus.innerHTML = '⏸️ MANUAL';
+            }
+        }
 
-                // Toggle face detection
-                async function toggleFaceDetection() {
-                        try {
-                                const response = await fetch('/toggle_face_detection', { method: 'POST' });
-                                const result = await response.json();
+        // Status polling
+        setInterval(async () => {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                updateFollowStatus(data.follow_active);
+            } catch (error) {
+                console.error('Status error:', error);
+            }
+        }, 2000);
 
-                                if (result.enabled) {
-                                        faceDetectBtn.classList.add('active');
-                                } else {
-                                        faceDetectBtn.classList.remove('active');
-                                }
-                        } catch (error) {
-                                console.error('Toggle error:', error);
-                        }
-                }
-
-                // Update follow status
-                function updateFollowStatus(isActive) {
-                        if (isActive) {
-                                followStatus.classList.remove('inactive');
-                                followStatus.classList.add('active');
-                                followStatus.innerHTML = '✅ FOLLOW MODE';
-                        } else {
-                                followStatus.classList.remove('active');
-                                followStatus.classList.add('inactive');
-                                followStatus.innerHTML = '⏸️ MANUAL';
-                        }
-                }
-
-                // Status polling
-                setInterval(async () => {
-                        try {
-                                const response = await fetch('/status');
-                                const data = await response.json();
-                                updateFollowStatus(data.follow_active);
-                        } catch (error) {
-                                console.error('Status error:', error);
-                        }
-                }, 2000);
-
-                // Initialize
-                initMicrophone();
-        </script>
+        // Initialize
+        initMicrophone();
+    </script>
 </body>
 
 </html>
