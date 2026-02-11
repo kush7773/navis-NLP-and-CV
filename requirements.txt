@@ -1,0 +1,29 @@
+# Navis Robot - Python Dependencies
+# Install with: pip3 install -r requirements.txt
+
+# Web Framework
+flask>=2.3.0
+
+# LLM APIs
+requests>=2.31.0
+
+# Speech Recognition
+SpeechRecognition>=3.10.0
+vosk>=0.3.45
+pyaudio>=0.2.13
+
+# Text-to-Speech
+pyttsx3>=2.90
+
+# Audio Processing
+pydub>=0.25.1
+
+# Computer Vision (for navis_hybrid.py)
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Serial Communication
+pyserial>=3.5
+
+# Raspberry Pi GPIO (only needed on Raspberry Pi)
+# RPi.GPIO>=0.7.1

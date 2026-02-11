@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🤖 Navis Voice Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            text-align: center;
+            opacity: 0.8;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        /* Voice Control Section */
+        .voice-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        #recordBtn {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #recordBtn:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        #recordBtn.recording {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .mic-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        /* Status Display */
+        #status {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            min-height: 120px;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: left;
+        }
+        
+        #status p {
+            margin: 8px 0;
+        }
+        
+        #status strong {
+            color: #ffd700;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #4ade80;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* Text Input Section */
+        .text-section {
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .text-section h3 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+        
+        button.send {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 25px;
+            background: #00d4ff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+        
+        button.send:active {
+            transform: scale(0.95);
+            background: #00a8cc;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Error/Warning Messages */
+        .error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        
+        .success {
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Navis Voice Control</h1>
+        <p class="subtitle">Use your phone as a microphone</p>
+        
+        <!-- Voice Control -->
+        <div class="voice-section">
+            <button id="recordBtn">
+                <div class="mic-icon">🎤</div>
+                <div id="btnText">Hold to Speak</div>
+            </button>
+            
+            <div id="status">
+                <span class="status-indicator"></span>
+                <strong>Ready to listen...</strong>
+                <p style="opacity: 0.7; margin-top: 10px;">Press and hold the button to record your question</p>
+            </div>
+        </div>
+        
+        <!-- Text Input Alternative -->
+        <div class="text-section">
+            <h3>💬 Or Type Your Message</h3>
+            <div class="input-group">
+                <input type="text" id="textInput" placeholder="Type your question...">
+                <button class="send" onclick="sendText()">Send</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        const recordBtn = document.getElementById('recordBtn');
+        const btnText = document.getElementById('btnText');
+        const statusDiv = document.getElementById('status');
+        
+        // Initialize microphone
+        async function initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+                
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm'
+                });
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioChunks = [];
+                    
+                    // Send to robot
+                    await sendAudio(audioBlob);
+                };
+                
+                statusDiv.innerHTML = '<span class="status-indicator"></span><strong class="success">✅ Microphone ready!</strong><p style="opacity: 0.7; margin-top: 10px;">Press and hold the button to start recording</p>';
+                
+            } catch (error) {
+                console.error('Microphone error:', error);
+                statusDiv.innerHTML = '<div class="error">❌ Microphone access denied. Please allow microphone access and refresh the page.</div>';
+                recordBtn.disabled = true;
+            }
+        }
+        
+        // Send audio to server
+        async function sendAudio(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+            
+            statusDiv.innerHTML = '<div class="spinner"></div> <strong>Processing your question...</strong>';
+            
+            try {
+                const response = await fetch('/audio_upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    statusDiv.innerHTML = `<div class="error">❌ Error: ${result.error}</div>`;
+                } else {
+                    statusDiv.innerHTML = `
+                        <p><strong>👤 You:</strong> ${result.transcription}</p>
+                        <p><strong>🤖 Navis:</strong> ${result.response}</p>
+                        <p style="opacity: 0.6; margin-top: 10px; font-size: 12px;">🔊 Speaking response...</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                statusDiv.innerHTML = `<div class="error">❌ Network error. Make sure you're connected to the robot's network.</div>`;
+            }
+        }
+        
+        // Recording controls
+        function startRecording(e) {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state === 'inactive') {
+                audioChunks = [];
+                mediaRecorder.start();
+                recordBtn.classList.add('recording');
+                btnText.textContent = 'Recording...';
+                statusDiv.innerHTML = '<strong>🎤 Listening...</strong><p style="margin-top: 10px;">Speak your question clearly</p>';
+            }
+        }
+        
+        function stopRecording(e) {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                recordBtn.classList.remove('recording');
+                btnText.textContent = 'Hold to Speak';
+            }
+        }
+        
+        // Event listeners for both mouse and touch
+        recordBtn.addEventListener('mousedown', startRecording);
+        recordBtn.addEventListener('touchstart', startRecording);
+        recordBtn.addEventListener('mouseup', stopRecording);
+        recordBtn.addEventListener('touchend', stopRecording);
+        recordBtn.addEventListener('mouseleave', stopRecording);
+        
+        // Text input
+        async function sendText() {
+            const input = document.getElementById('textInput');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            statusDiv.innerHTML = '<div class="spinner"></div> <strong>Processing your question...</strong>';
+            
+            try {
+                const response = await fetch('/text_chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: text})
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    statusDiv.innerHTML = `<div class="error">❌ Error: ${result.error}</div>`;
+                } else {
+                    statusDiv.innerHTML = `
+                        <p><strong>👤 You:</strong> ${text}</p>
+                        <p><strong>🤖 Navis:</strong> ${result.response}</p>
+                        <p style="opacity: 0.6; margin-top: 10px; font-size: 12px;">🔊 Speaking response...</p>
+                    `;
+                }
+                
+                input.value = '';
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = `<div class="error">❌ Network error. Make sure you're connected to the robot's network.</div>`;
+            }
+        }
+        
+        // Allow Enter key to send
+        document.getElementById('textInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendText();
+        });
+        
+        // Initialize on page load
+        initMicrophone();
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+# Don't commit sensitive information
+config.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.tmp
+/tmp/
+*.webm
+*.wav
+
+# Vosk model (too large for git)
+model/
+
+# Artifacts (local only)
+.gemini/
+brain/
