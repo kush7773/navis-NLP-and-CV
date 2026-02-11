@@ -18,7 +18,7 @@
                         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
                         color: #fff;
                         overflow-x: hidden;
-                        height: 100vh;
+                        min-height: 100vh;
                 }
 
                 /* Header */
@@ -39,7 +39,6 @@
                         background: linear-gradient(135deg, #00d4ff, #00ff88);
                         -webkit-background-clip: text;
                         -webkit-text-fill-color: transparent;
-                        text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
                 }
 
                 .status-badge {
@@ -82,13 +81,11 @@
                         grid-template-columns: 1fr 1fr;
                         gap: 15px;
                         padding: 15px;
-                        height: calc(100vh - 70px);
                 }
 
                 @media (max-width: 768px) {
                         .container {
                                 grid-template-columns: 1fr;
-                                height: auto;
                         }
                 }
 
@@ -114,7 +111,7 @@
 
                 /* Camera Feed */
                 .camera-panel {
-                        grid-row: span 2;
+                        grid-row: span 3;
                 }
 
                 .camera-feed {
@@ -339,6 +336,78 @@
                         background: rgba(255, 255, 255, 0.1);
                 }
 
+                /* Person Training Section */
+                .training-section {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                }
+
+                .training-status {
+                        padding: 12px;
+                        background: rgba(0, 0, 0, 0.3);
+                        border-radius: 10px;
+                        text-align: center;
+                        font-weight: bold;
+                        font-size: 14px;
+                }
+
+                .training-status.enrolled {
+                        color: #00ff88;
+                        border: 2px solid #00ff88;
+                }
+
+                .training-status.not-enrolled {
+                        color: #ff6b6b;
+                        border: 2px solid #ff6b6b;
+                }
+
+                .view-buttons {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 10px;
+                }
+
+                .train-btn {
+                        padding: 12px;
+                        border: 2px solid #00ff88;
+                        background: rgba(0, 255, 136, 0.1);
+                        color: #00ff88;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        font-size: 13px;
+                        transition: all 0.3s ease;
+                }
+
+                .train-btn:active {
+                        transform: scale(0.95);
+                        background: rgba(0, 255, 136, 0.2);
+                }
+
+                .clear-btn {
+                        padding: 10px;
+                        border: 2px solid #ff6b6b;
+                        background: rgba(255, 107, 107, 0.1);
+                        color: #ff6b6b;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: all 0.3s ease;
+                }
+
+                .clear-btn:active {
+                        transform: scale(0.95);
+                        background: rgba(255, 107, 107, 0.2);
+                }
+
+                .views-list {
+                        font-size: 12px;
+                        opacity: 0.8;
+                        text-align: center;
+                        margin-top: 5px;
+                }
+
                 .spinner {
                         display: inline-block;
                         width: 16px;
@@ -354,17 +423,19 @@
                                 transform: rotate(360deg);
                         }
                 }
+
+                input[type="file"] {
+                        display: none;
+                }
         </style>
 </head>
 
 <body>
-        <!-- Header -->
         <div class="header">
                 <div class="logo">🤖 NAVIS CONTROL CENTER</div>
                 <div class="status-badge inactive" id="followStatus">⏸️ MANUAL</div>
         </div>
 
-        <!-- Main Container -->
         <div class="container">
                 <!-- Camera Panel -->
                 <div class="panel camera-panel">
@@ -384,29 +455,29 @@
                         {% endif %}
                 </div>
 
-                <!-- Joystick Control Panel -->
+                <!-- Joystick Panel -->
                 <div class="panel">
                         <div class="panel-title">🕹️ Joystick Control</div>
                         <div class="joystick-container">
                                 <div class="joystick">
                                         <div></div>
-                                        <div class="joystick-btn" onmousedown="sendCommand('F')"
-                                                onmouseup="sendCommand('S')" ontouchstart="sendCommand('F')"
-                                                ontouchend="sendCommand('S')">↑</div>
+                                        <div class="joystick-btn" onmousedown="startMoving('F')"
+                                                onmouseup="stopMoving()" ontouchstart="startMoving('F')"
+                                                ontouchend="stopMoving()" onmouseleave="stopMoving()">↑</div>
                                         <div></div>
 
-                                        <div class="joystick-btn" onmousedown="sendCommand('L')"
-                                                onmouseup="sendCommand('S')" ontouchstart="sendCommand('L')"
-                                                ontouchend="sendCommand('S')">←</div>
-                                        <div class="joystick-btn center" onclick="sendCommand('S')">STOP</div>
-                                        <div class="joystick-btn" onmousedown="sendCommand('R')"
-                                                onmouseup="sendCommand('S')" ontouchstart="sendCommand('R')"
-                                                ontouchend="sendCommand('S')">→</div>
+                                        <div class="joystick-btn" onmousedown="startMoving('L')"
+                                                onmouseup="stopMoving()" ontouchstart="startMoving('L')"
+                                                ontouchend="stopMoving()" onmouseleave="stopMoving()">←</div>
+                                        <div class="joystick-btn center" onclick="stopMoving()">STOP</div>
+                                        <div class="joystick-btn" onmousedown="startMoving('R')"
+                                                onmouseup="stopMoving()" ontouchstart="startMoving('R')"
+                                                ontouchend="stopMoving()" onmouseleave="stopMoving()">→</div>
 
                                         <div></div>
-                                        <div class="joystick-btn" onmousedown="sendCommand('B')"
-                                                onmouseup="sendCommand('S')" ontouchstart="sendCommand('B')"
-                                                ontouchend="sendCommand('S')">↓</div>
+                                        <div class="joystick-btn" onmousedown="startMoving('B')"
+                                                onmouseup="stopMoving()" ontouchstart="startMoving('B')"
+                                                ontouchend="stopMoving()" onmouseleave="stopMoving()">↓</div>
                                         <div></div>
                                 </div>
 
@@ -448,6 +519,46 @@
                                 <button class="send-btn" onclick="sendText()">Send</button>
                         </div>
                 </div>
+
+                <!-- Person Training Panel -->
+                <div class="panel">
+                        <div class="panel-title">👤 Person Training</div>
+
+                        <div class="training-section">
+                                <div class="training-status not-enrolled" id="trainingStatus">
+                                        ⚠️ No person enrolled
+                                </div>
+                                <div class="views-list" id="viewsList"></div>
+
+                                <div class="view-buttons">
+                                        <button class="train-btn" onclick="captureView('front')">
+                                                📸 Front View
+                                        </button>
+                                        <button class="train-btn" onclick="captureView('back')">
+                                                📸 Back View
+                                        </button>
+                                </div>
+
+                                <input type="file" id="photoUploadFront" accept="image/*"
+                                        onchange="uploadPhoto('front')">
+                                <input type="file" id="photoUploadBack" accept="image/*" onchange="uploadPhoto('back')">
+
+                                <div class="view-buttons">
+                                        <button class="train-btn"
+                                                onclick="document.getElementById('photoUploadFront').click()">
+                                                📁 Upload Front
+                                        </button>
+                                        <button class="train-btn"
+                                                onclick="document.getElementById('photoUploadBack').click()">
+                                                📁 Upload Back
+                                        </button>
+                                </div>
+
+                                <button class="clear-btn" onclick="clearPerson()">
+                                        🗑️ Clear Training
+                                </button>
+                        </div>
+                </div>
         </div>
 
         <script>
@@ -458,7 +569,37 @@
                 const followStatus = document.getElementById('followStatus');
                 const faceDetectBtn = document.getElementById('faceDetectBtn');
 
-                // Initialize microphone
+                // ============================================
+                //   CONTINUOUS MOVEMENT LOGIC
+                // ============================================
+                let moveInterval = null;
+
+                function startMoving(cmd) {
+                        if (event && event.type === 'touchstart') {
+                                event.preventDefault();
+                        }
+
+                        sendCommand(cmd);  // Send immediately
+
+                        if (moveInterval) clearInterval(moveInterval);
+
+                        // Repeat every 100ms for continuous movement
+                        moveInterval = setInterval(() => {
+                                sendCommand(cmd);
+                        }, 100);
+                }
+
+                function stopMoving() {
+                        if (moveInterval) {
+                                clearInterval(moveInterval);
+                                moveInterval = null;
+                        }
+                        sendCommand('S');
+                }
+
+                // ============================================
+                //   MICROPHONE INITIALIZATION
+                // ============================================
                 async function initMicrophone() {
                         try {
                                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -510,7 +651,9 @@
                         }
                 }
 
-                // Send audio to server
+                // ============================================
+                //   AUDIO/TEXT COMMUNICATION
+                // ============================================
                 async function sendAudio(audioBlob) {
                         const formData = new FormData();
                         formData.append('audio', audioBlob, 'recording.webm');
@@ -535,26 +678,24 @@
                         }
                 }
 
-                // Joystick controls
                 async function sendCommand(cmd) {
                         try {
-                                await fetch('/manual_control', {
+                                fetch('/manual_control', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ command: cmd })
-                                });
+                                }).catch(err => console.error(err));
                         } catch (error) {
                                 console.error('Command error:', error);
                         }
                 }
 
-                // Emergency stop
                 function emergencyStop() {
+                        stopMoving();
                         sendCommand('S');
                         statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">🛑 EMERGENCY STOP ACTIVATED</strong>';
                 }
 
-                // Quick commands
                 async function quickCommand(text) {
                         statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
 
@@ -573,7 +714,6 @@
                         }
                 }
 
-                // Text input
                 async function sendText() {
                         const input = document.getElementById('textInput');
                         const text = input.value.trim();
@@ -604,7 +744,103 @@
                         if (e.key === 'Enter') sendText();
                 });
 
-                // Toggle face detection
+                // ============================================
+                //   PERSON TRAINING
+                // ============================================
+                async function captureView(view) {
+                        statusDisplay.innerHTML = `<div class="spinner"></div> <strong>Capturing ${view} view...</strong>`;
+
+                        try {
+                                const response = await fetch('/capture_person', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ view: view })
+                                });
+
+                                const result = await response.json();
+
+                                if (result.success) {
+                                        statusDisplay.innerHTML = `<strong style="color: #00ff88;">✅ ${result.message}</strong>`;
+                                        updatePersonStatus();
+                                } else {
+                                        statusDisplay.innerHTML = `<strong style="color: #ff6b6b;">❌ ${result.error}</strong>`;
+                                }
+                        } catch (error) {
+                                statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">❌ Capture failed</strong>';
+                        }
+                }
+
+                async function uploadPhoto(view) {
+                        const fileInput = view === 'front' ? document.getElementById('photoUploadFront') : document.getElementById('photoUploadBack');
+                        const file = fileInput.files[0];
+                        if (!file) return;
+
+                        const formData = new FormData();
+                        formData.append('photo', file);
+                        formData.append('view', view);
+
+                        statusDisplay.innerHTML = `<div class="spinner"></div> <strong>Uploading ${view} photo...</strong>`;
+
+                        try {
+                                const response = await fetch('/upload_person_photo', {
+                                        method: 'POST',
+                                        body: formData
+                                });
+
+                                const result = await response.json();
+
+                                if (result.success) {
+                                        statusDisplay.innerHTML = `<strong style="color: #00ff88;">✅ ${result.message}</strong>`;
+                                        updatePersonStatus();
+                                } else {
+                                        statusDisplay.innerHTML = `<strong style="color: #ff6b6b;">❌ ${result.error}</strong>`;
+                                }
+                        } catch (error) {
+                                statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">❌ Upload failed</strong>';
+                        }
+
+                        fileInput.value = '';
+                }
+
+                async function clearPerson() {
+                        if (!confirm('Clear all training data?')) return;
+
+                        try {
+                                const response = await fetch('/clear_person', { method: 'POST' });
+                                const result = await response.json();
+
+                                statusDisplay.innerHTML = `<strong>✅ ${result.message}</strong>`;
+                                updatePersonStatus();
+                        } catch (error) {
+                                statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">❌ Clear failed</strong>';
+                        }
+                }
+
+                async function updatePersonStatus() {
+                        try {
+                                const response = await fetch('/person_status');
+                                const data = await response.json();
+
+                                const trainingStatus = document.getElementById('trainingStatus');
+                                const viewsList = document.getElementById('viewsList');
+
+                                if (data.enrolled) {
+                                        trainingStatus.className = 'training-status enrolled';
+                                        trainingStatus.innerHTML = `✅ ${data.name} Enrolled`;
+                                        viewsList.innerHTML = `Views: ${data.views.join(', ')} (${data.total_views} total)`;
+                                } else {
+                                        trainingStatus.className = 'training-status not-enrolled';
+                                        trainingStatus.innerHTML = '⚠️ No person enrolled';
+                                        viewsList.innerHTML = '';
+                                }
+                        } catch (error) {
+                                console.error('Status error:', error);
+                        }
+                }
+
+                // ============================================
+                //   CAMERA CONTROLS
+                // ============================================
                 async function toggleFaceDetection() {
                         try {
                                 const response = await fetch('/toggle_face_detection', { method: 'POST' });
@@ -620,7 +856,9 @@
                         }
                 }
 
-                // Update follow status
+                // ============================================
+                //   STATUS UPDATES
+                // ============================================
                 function updateFollowStatus(isActive) {
                         if (isActive) {
                                 followStatus.classList.remove('inactive');
@@ -644,8 +882,12 @@
                         }
                 }, 2000);
 
+                // Person status polling
+                setInterval(updatePersonStatus, 3000);
+
                 // Initialize
                 initMicrophone();
+                updatePersonStatus();
         </script>
 </body>
 
