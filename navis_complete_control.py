@@ -130,24 +130,88 @@ def generate_frames():
                 cv2.putText(frame, f"{status} - {label}", (x, y-10), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
         
-        # Follow mode motor control
+        # Follow mode motor control with distance maintenance
         if follow_mode_active and detected_human and bot:
-            # Calculate error from center
+            # Calculate horizontal error from center
             error = target_x - frame_center_x
-            threshold = 50  # Deadzone
+            threshold = 50  # Horizontal deadzone
             
-            if abs(error) < threshold:
-                # Human is centered - move forward
-                bot.drive(AUTO_SPEED, AUTO_SPEED)
-            elif error > threshold:
-                # Human is to the right - turn right
-                bot.drive(TURN_SPEED, -TURN_SPEED)
+            # Calculate distance based on bounding box size
+            # Larger box = closer, smaller box = farther
+            # Optimal range: 80-150 pixels width
+            OPTIMAL_MIN_SIZE = 80   # Too close if bigger
+            OPTIMAL_MAX_SIZE = 150  # Too far if smaller
+            STOP_DISTANCE = 200     # Emergency stop if very close
+            
+            # Distance control logic
+            if target_w > STOP_DISTANCE:
+                # TOO CLOSE - Stop completely
+                bot.stop()
+                distance_status = "TOO CLOSE - STOPPED"
+                distance_color = (0, 0, 255)  # Red
+                
+            elif target_w > OPTIMAL_MIN_SIZE:
+                # Good distance but might be getting close
+                # Just turn to keep centered, don't move forward
+                if abs(error) < threshold:
+                    # Centered and good distance - stop
+                    bot.stop()
+                    distance_status = "GOOD DISTANCE - CENTERED"
+                    distance_color = (0, 255, 0)  # Green
+                elif error > threshold:
+                    # Turn right (in place)
+                    bot.drive(TURN_SPEED // 2, -TURN_SPEED // 2)
+                    distance_status = "TURNING RIGHT"
+                    distance_color = (0, 255, 255)  # Yellow
+                else:
+                    # Turn left (in place)
+                    bot.drive(-TURN_SPEED // 2, TURN_SPEED // 2)
+                    distance_status = "TURNING LEFT"
+                    distance_color = (0, 255, 255)  # Yellow
+                    
+            elif target_w < OPTIMAL_MAX_SIZE:
+                # TOO FAR - Move forward while turning
+                if abs(error) < threshold:
+                    # Centered - move forward
+                    bot.drive(AUTO_SPEED, AUTO_SPEED)
+                    distance_status = "MOVING FORWARD"
+                    distance_color = (0, 255, 0)  # Green
+                elif error > threshold:
+                    # Turn right while moving forward
+                    bot.drive(AUTO_SPEED, AUTO_SPEED // 2)
+                    distance_status = "FORWARD + RIGHT"
+                    distance_color = (0, 255, 255)  # Yellow
+                else:
+                    # Turn left while moving forward
+                    bot.drive(AUTO_SPEED // 2, AUTO_SPEED)
+                    distance_status = "FORWARD + LEFT"
+                    distance_color = (0, 255, 255)  # Yellow
             else:
-                # Human is to the left - turn left
-                bot.drive(-TURN_SPEED, TURN_SPEED)
+                # In optimal range
+                if abs(error) < threshold:
+                    # Perfect - centered and good distance
+                    bot.stop()
+                    distance_status = "OPTIMAL - FOLLOWING"
+                    distance_color = (0, 255, 0)  # Green
+                elif error > threshold:
+                    # Just turn right
+                    bot.drive(TURN_SPEED // 2, -TURN_SPEED // 2)
+                    distance_status = "ADJUSTING RIGHT"
+                    distance_color = (0, 255, 255)  # Yellow
+                else:
+                    # Just turn left
+                    bot.drive(-TURN_SPEED // 2, TURN_SPEED // 2)
+                    distance_status = "ADJUSTING LEFT"
+                    distance_color = (0, 255, 255)  # Yellow
+                    
         elif follow_mode_active and not detected_human and bot:
             # Lost human - stop and look around slowly
             bot.drive(30, -30)  # Slow turn to search
+            distance_status = "SEARCHING..."
+            distance_color = (255, 165, 0)  # Orange
+        else:
+            distance_status = None
+            distance_color = None
         
         # Add status overlay
         status_text = "FOLLOW MODE: ON" if follow_mode_active else "MANUAL CONTROL"
@@ -155,9 +219,18 @@ def generate_frames():
                    0.7, (0, 255, 0) if follow_mode_active else (255, 255, 255), 2)
         
         if follow_mode_active:
-            tracking_status = "TRACKING" if detected_human else "SEARCHING..."
-            cv2.putText(frame, tracking_status, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
-                       0.6, (0, 255, 0) if detected_human else (255, 165, 0), 2)
+            if detected_human and distance_status:
+                # Show distance status
+                cv2.putText(frame, distance_status, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
+                           0.6, distance_color, 2)
+                # Show distance indicator
+                distance_text = f"Distance: {target_w}px"
+                cv2.putText(frame, distance_text, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 
+                           0.5, (255, 255, 255), 1)
+            else:
+                tracking_status = "SEARCHING..."
+                cv2.putText(frame, tracking_status, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
+                           0.6, (255, 165, 0), 2)
         
         ret, buffer = cv2.imencode('.jpg', frame)
         frame_bytes = buffer.tobytes()
