@@ -158,16 +158,23 @@ def generate_frames():
                                     )[0]
                                     
                                     # Match against enrolled person
+                                    # Use slightly looser threshold (0.65) for robust tracking
                                     is_match, conf, _ = match_target_person(
                                         face_encoding, 
-                                        target_person_encodings
+                                        target_person_encodings,
+                                        threshold=0.65
                                     )
                                     
                                     if is_match:
                                         is_target = True
                                         color = (0, 255, 0) # Green = Target
-                                        print(f"✅ Matched target! Conf: {conf:.2f}")
+                                        if generate_frames.frame_count % 10 == 0:
+                                            print(f"✅ Matched! Dist: {(1-conf):.2f}")
                                         cv2.putText(frame, f"MATCH ({int(conf*100)}%)", (x_real, y_real-30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                                    else:
+                                        if generate_frames.frame_count % 30 == 0:
+                                            print(f"❌ Face detected but not matched (Conf: {conf:.2f})")
+
                                 except Exception as e:
                                     print(f"❌ Matching error: {e}")
                             else:
@@ -177,13 +184,23 @@ def generate_frames():
                                 if generate_frames.frame_count % 30 == 0:
                                     print("ℹ️ Tracking generic face (no target set)")
 
-                            # 3. DRIVING logic...
-
-                            # 3. DRIVING: Only drive if it is the target (or no target set)
+                            # 3. DRIVING logic
                             if is_target:
                                 cx = x_real + w_real // 2
                                 error = cx - 320
                                 
+                                # Print driving logic debug
+                                if generate_frames.frame_count % 10 == 0:
+                                    direction = "CENTER"
+                                    if error > DEAD_ZONE: direction = "RIGHT"
+                                    elif error < -DEAD_ZONE: direction = "LEFT"
+                                    
+                                    distance_status = "OK"
+                                    if w_real < 100: distance_status = "TOO FAR"
+                                    elif w_real > 200: distance_status = "TOO CLOSE"
+                                    
+                                    print(f"🚗 Drive: {direction} (Err: {error}), Dist: {distance_status} (W: {w_real})")
+
                                 if abs(error) > DEAD_ZONE:
                                     if error > 0: # Right
                                         left_mtr, right_mtr = TURN_SPEED_TRACK, -TURN_SPEED_TRACK
