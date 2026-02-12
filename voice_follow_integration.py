@@ -86,6 +86,9 @@ except Exception as e:
 # Global state
 show_face_detection = False
 frames_lock = threading.Lock()
+follow_mode_active = False
+target_person_encodings = {}
+target_person_name = ""
 
 def generate_frames():
     """Video streaming generator function"""
