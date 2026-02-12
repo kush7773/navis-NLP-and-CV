@@ -28,6 +28,9 @@ model/
 # Saved person encodings (generated at runtime)
 target_person.pkl
 
+# Configuration with API keys (use config.example.py as template)
+config.py
+
 # Artifacts (local only)
 .gemini/
 brain/
