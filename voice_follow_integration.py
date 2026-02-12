@@ -16,12 +16,15 @@ from config import (
     ROBOT_NAME, 
     FOLLOW_COMMANDS, 
     STOP_COMMANDS,
-    RASPBERRY_PI_IP,
     SERIAL_PORT,
-    SERIAL_BAUD
+    SERIAL_BAUD,
+    MANUAL_SPEED,
+    TURN_SPEED
 )
 import subprocess
 import signal
+import threading
+import time
 import cv2
 import numpy as np
 import pickle
@@ -57,6 +60,52 @@ except Exception as e:
     print(f"⚠️ Warning: Camera failed to initialize: {e}")
     camera_available = False
     cap = None
+
+# Global state
+show_face_detection = False
+frames_lock = threading.Lock()
+
+def generate_frames():
+    """Video streaming generator function"""
+    global cap, show_face_detection, target_person_encodings
+    
+    while True:
+        if not camera_available or cap is None:
+            break
+            
+        with frames_lock:
+            success, frame = cap.read()
+            
+        if not success:
+            break
+            
+        # Add overlay if enabled
+        if show_face_detection:
+            # Person detection logic here (simplified for streaming)
+            # Detect faces
+            try:
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                face_locations = face_recognition.face_locations(rgb_frame, model='hog')
+                
+                for (top, right, bottom, left) in face_locations:
+                    # Draw box
+                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                    
+                    # If we have target person, try to match
+                    if len(target_person_encodings) > 0:
+                        face_encodings = face_recognition.face_encodings(rgb_frame, [(top, right, bottom, left)])
+                        if len(face_encodings) > 0:
+                            # Match logic
+                            pass # Simplified for stream speed
+                            
+            except Exception as e:
+                pass
+
+        # Encode frame
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 # Person-specific tracking
 target_person_encodings = {}  # {"front": encoding, "left": encoding, etc.}
@@ -283,6 +332,50 @@ def follow_status():
         'follow_active': follow_mode_active,
         'hybrid_running': navis_hybrid_process is not None
     })
+
+
+
+@app.route('/video_feed')
+def video_feed():
+    """Video streaming route"""
+    if not camera_available:
+        return "Camera not available", 404
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/toggle_face_detection', methods=['POST'])
+def toggle_face_detection():
+    """Toggle face detection overlay"""
+    global show_face_detection
+    show_face_detection = not show_face_detection
+    return jsonify({'enabled': show_face_detection})
+
+@app.route('/manual_control', methods=['POST'])
+def manual_control():
+    """Handle joystick/manual controls: F, B, L, R, S"""
+    data = request.json
+    command = data.get('command', '').upper()
+    
+    if not bot:
+        return jsonify({'error': 'Robot not connected'}), 500
+    
+    try:
+        # Map commands to motor speeds
+        if command == 'F':  # Forward
+            bot.drive(MANUAL_SPEED, MANUAL_SPEED)
+        elif command == 'B':  # Back
+            bot.drive(-MANUAL_SPEED, -MANUAL_SPEED)
+        elif command == 'L':  # Left
+            bot.drive(-TURN_SPEED, TURN_SPEED)
+        elif command == 'R':  # Right
+            bot.drive(TURN_SPEED, -TURN_SPEED)
+        elif command == 'S':  # Stop
+            bot.stop()
+        else:
+            return jsonify({'error': 'Invalid command'}), 400
+        
+        return jsonify({'status': 'ok', 'command': command})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/health')
 def health():
