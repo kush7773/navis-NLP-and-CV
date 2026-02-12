@@ -51,16 +51,37 @@ def load_target_encoding():
             with open('target_person.pkl', 'rb') as f:
                 data = pickle.load(f)
                 
+                name = data.get('name', 'Unknown')
+                valid_encodings = {}
+
+                # Helper to validate encoding
+                def process_encoding(enc):
+                    if isinstance(enc, np.ndarray) and enc.shape == (128,):
+                        return enc
+                    elif isinstance(enc, list) and len(enc) == 128:
+                        return np.array(enc)
+                    return None
+                
                 # Handle old format (single encoding)
                 if 'encoding' in data:
-                    print(f"✅ Loaded encoding for: {data['name']} (legacy format)")
-                    return {'front': data['encoding']}, data['name']
+                    enc = process_encoding(data['encoding'])
+                    if enc is not None:
+                        valid_encodings['front'] = enc
                 
                 # New format (multiple encodings)
                 if 'encodings' in data:
-                    print(f"✅ Loaded {len(data['encodings'])} encodings for: {data['name']}")
-                    print(f"   Views: {', '.join(data['views'])}")
-                    return data['encodings'], data['name']
+                    for view, enc in data['encodings'].items():
+                        valid_enc = process_encoding(enc)
+                        if valid_enc is not None:
+                            valid_encodings[view] = valid_enc
+                        else:
+                            print(f"⚠️ Invalid encoding shape for view '{view}': {np.shape(enc) if hasattr(enc, 'shape') else type(enc)}")
+
+                if valid_encodings:
+                    print(f"✅ Loaded {len(valid_encodings)} valid encodings for: {name}")
+                    return valid_encodings, name
+                else:
+                    print("⚠️ No valid encodings found in file.")
                     
         except Exception as e:
             print(f"❌ Error loading encoding: {e}")

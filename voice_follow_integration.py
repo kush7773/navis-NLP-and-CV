@@ -158,11 +158,11 @@ def generate_frames():
                                     )[0]
                                     
                                     # Match against enrolled person
-                                    # Use slightly looser threshold (0.65) for robust tracking
+                                    # Use loose threshold (0.7) for robust tracking in bad lighting
                                     is_match, conf, _ = match_target_person(
                                         face_encoding, 
                                         target_person_encodings,
-                                        threshold=0.65
+                                        threshold=0.7
                                     )
                                     
                                     if is_match:
