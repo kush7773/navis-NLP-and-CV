@@ -328,6 +328,34 @@
                                 <button class="send" onclick="sendText()">Send</button>
                         </div>
                 </div>
+
+		<!-- Hand & Arm Controls -->
+		<div class="text-section">
+			<h3 onclick="document.getElementById('handPanel').style.display=document.getElementById('handPanel').style.display==='none'?'block':'none'">🖐️ Hand & Arm Controls (Tap)</h3>
+			<div id="handPanel" style="display:none;padding:15px;background:rgba(255,255,255,0.05);border-radius:15px;">
+				<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+					<button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'LC'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:12px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:12px;color:#00d4ff;font-weight:bold;">👐 Left Open</button>
+					<button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'RC'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:12px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:12px;color:#00ff88;font-weight:bold;">👐 Right Open</button>
+					<button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'LO'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:12px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:12px;color:#00d4ff;font-weight:bold;">✊ Left Close</button>
+					<button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'RO'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:12px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:12px;color:#00ff88;font-weight:bold;">✊ Right Close</button>
+				</div>
+				<div style="margin:15px 0;">
+					<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;"><span>Left Wrist</span><span id="lw">90°</span></div>
+					<input type="range" min="0" max="180" value="90" oninput="document.getElementById('lw').textContent=this.value+'°';fetch('/wrist_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({side:'L',angle:this.value})})" style="width:100%;height:6px;border-radius:5px;background:rgba(255,255,255,0.2);">
+				</div>
+				<div style="margin:15px 0;">
+					<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;"><span>Right Wrist</span><span id="rw">90°</span></div>
+					<input type="range" min="0" max="180" value="90" oninput="document.getElementById('rw').textContent=this.value+'°';fetch('/wrist_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({side:'R',angle:this.value})})" style="width:100%;height:6px;border-radius:5px;background:rgba(255,255,255,0.2);">
+				</div>
+				<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">
+					<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BLU'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:10px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:10px;color:#00d4ff;font-weight:bold;">⬆️ L Up</button>
+					<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BRU'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:10px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:10px;color:#00ff88;font-weight:bold;">⬆️ R Up</button>
+					<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BLD'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:10px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:10px;color:#00d4ff;font-weight:bold;">⬇️ L Down</button>
+					<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BRD'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:10px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:10px;color:#00ff88;font-weight:bold;">⬇️ R Down</button>
+				</div>
+				<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BS'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="width:100%;padding:15px;background:linear-gradient(135deg,#ff6b6b,#ee5a6f);border:none;border-radius:12px;color:white;font-weight:bold;margin-top:10px;">�� STOP BICEPS</button>
+			</div>
+		</div>
         </div>
 
         <script>
