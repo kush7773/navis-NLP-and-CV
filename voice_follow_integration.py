@@ -146,11 +146,14 @@ def generate_frames():
                             
                             if target_person_encodings:
                                 try:
+                                    # Ensure contiguous array for dlib to prevent segfaults
+                                    rgb_small_safe = np.ascontiguousarray(rgb_small)
+                                    
                                     # Extract face ROI from RGB frame for encoding
                                     # face_recognition expects (top, right, bottom, left)
-                                    # We use the small frame for speed
+                                    print(f"🔍 Matching face at {x*4},{y*4}...")
                                     face_encoding = face_recognition.face_encodings(
-                                        rgb_small, 
+                                        rgb_small_safe, 
                                         [(y, x+w, y+h, x)]
                                     )[0]
                                     
@@ -163,18 +166,18 @@ def generate_frames():
                                     if is_match:
                                         is_target = True
                                         color = (0, 255, 0) # Green = Target
+                                        print(f"✅ Matched target! Conf: {conf:.2f}")
                                         cv2.putText(frame, f"MATCH ({int(conf*100)}%)", (x_real, y_real-30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                                 except Exception as e:
-                                    print(f"Matching error: {e}")
+                                    print(f"❌ Matching error: {e}")
                             else:
-                                # No target set, tracking ANY face if active (or maybe just track first?)
-                                # Let's default to tracking ANY face if no enrollment, 
-                                # but usually we want specific tracking.
-                                # For now: If no enrollment, we don't track anyone specific, 
-                                # OR we track the first face we see (Safety).
-                                # Let's track green for generic if no enrollment.
+                                # No target set -> Track generic
                                 is_target = True
                                 color = (0, 255, 0)
+                                if generate_frames.frame_count % 30 == 0:
+                                    print("ℹ️ Tracking generic face (no target set)")
+
+                            # 3. DRIVING logic...
 
                             # 3. DRIVING: Only drive if it is the target (or no target set)
                             if is_target:
@@ -439,7 +442,7 @@ def follow_status():
     """Get current follow mode status"""
     return jsonify({
         'follow_active': follow_mode_active,
-        'hybrid_running': navis_hybrid_process is not None
+        'hybrid_running': follow_mode_active # Simplified since it's same process
     })
 
 
