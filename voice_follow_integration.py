@@ -37,6 +37,85 @@ from face_recognition_utils import (
     load_target_encoding,
     match_target_person
 )
+import mediapipe as mp
+
+# Configuration
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
+DEPTH_THRESHOLD_NEAR = 0.3    # Person closer than 30% frame height
+DEPTH_THRESHOLD_FAR = 0.5     # Person farther than 50% frame height (Adjusted for Pi)
+CENTER_TOLERANCE = 0.15       # 15% tolerance for center detection
+
+# --- MediaPipe Pose Tracker ---
+class PoseTracker:
+    def __init__(self):
+        self.mp_holistic = mp.solutions.holistic
+        self.mp_drawing = mp.solutions.drawing_utils
+        self.holistic = self.mp_holistic.Holistic(
+            static_image_mode=False,
+            model_complexity=0,              # Lighter model for speed
+            smooth_landmarks=True,
+            min_detection_confidence=0.4,    # Lower threshold for speed
+            min_tracking_confidence=0.4
+        )
+
+    def analyze_pose(self, frame):
+        """
+        Analyze person position and depth from pose landmarks
+        Returns: (position, depth, depth_percent, results)
+        """
+        h, w, c = frame.shape
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = self.holistic.process(frame_rgb)
+        
+        if not results.pose_landmarks:
+            return None, None, None, results
+        
+        # Get key landmarks for position analysis
+        landmarks = results.pose_landmarks.landmark
+        
+        # Use nose (landmark 0) and shoulders for position/depth detection
+        nose = landmarks[0]
+        left_shoulder = landmarks[11]
+        right_shoulder = landmarks[12]
+        
+        # Check confidence
+        if nose.visibility < 0.5:
+            return None, None, None, results
+        
+        # --- Calculate Horizontal Position (Left/Center/Right) ---
+        nose_x_norm = nose.x
+        
+        if nose_x_norm < (0.5 - CENTER_TOLERANCE):
+            position = 'left'
+        elif nose_x_norm > (0.5 + CENTER_TOLERANCE):
+            position = 'right'
+        else:
+            position = 'center'
+        
+        # --- Calculate Depth (Near/Medium/Far) ---
+        if left_shoulder.visibility > 0.5 and right_shoulder.visibility > 0.5:
+            shoulder_width = abs(right_shoulder.x - left_shoulder.x)
+            shoulder_width_norm = shoulder_width
+        else:
+            shoulder_width_norm = 0.3
+        
+        # Reverse: larger width = closer
+        # Map to 0-1 range where 0 = very close, 1 = very far
+        # Adjust range based on typical webcam FOV
+        depth_percent = 1.0 - np.clip(shoulder_width_norm, 0, 1)
+        
+        if depth_percent < DEPTH_THRESHOLD_NEAR:
+            depth = 'near'
+        elif depth_percent > DEPTH_THRESHOLD_FAR:
+            depth = 'far'
+        else:
+            depth = 'medium'
+            
+        return position, depth, depth_percent, results
+
+# Initialize Tracker
+pose_tracker = PoseTracker()
 
 app = Flask(__name__)
 
@@ -93,147 +172,143 @@ target_person_encodings = {}
 target_person_name = ""
 
 def generate_frames():
-    """Video streaming generator function"""
-    global cap, show_face_detection, target_person_encodings
+    """Video streaming generator function with Hybrid Tracking"""
+    global cap, show_face_detection, target_person_encodings, target_person_name
     
+    # Tracking State
+    frame_count = 0
+    last_driving_command = "STOP"
+    search_mode = False
+    is_target_provisional = False
+    
+    # Ensure camera is initialized
+    if not 'cap' in globals() or cap is None:
+        print("📷 Camera not initialized, attempting to restart...")
+        # Try to re-init (simplified)
+        try:
+            cap = cv2.VideoCapture(0)
+            cap.set(3, 640)
+            cap.set(4, 480)
+        except:
+            pass
+
     while True:
-        if not camera_available or cap is None:
-            break
+        if cap is None or not cap.isOpened():
+            # Try to reconnect occasionally
+            time.sleep(1)
+            continue
             
         with frames_lock:
             success, frame = cap.read()
             
         if not success:
-            break
-            
+            continue
+
+        frame_count += 1
+        
         # Add overlay and tracking if enabled
         if show_face_detection or follow_mode_active:
-             # Skip frames for detection performance (process every 3rd frame)
-            if not hasattr(generate_frames, "frame_count"):
-                generate_frames.frame_count = 0
             
-            generate_frames.frame_count += 1
+            # 1. MediaPipe Pose Analysis (Always run if tracking to get depth/pos)
+            # Resize for speed? PoseTracker can handle it.
+            # Convert to RGB for MediaPipe
+            mp_pos, mp_depth, mp_dist_pct, mp_results = pose_tracker.analyze_pose(frame)
             
-            # Reset motor values
-            left_mtr, right_mtr = 0, 0
-            
-            if generate_frames.frame_count % 3 == 0:
+            # Draw Pose Landmarks
+            if mp_results and mp_results.pose_landmarks:
+                pose_tracker.mp_drawing.draw_landmarks(
+                    frame,
+                    mp_results.pose_landmarks,
+                    pose_tracker.mp_holistic.POSE_CONNECTIONS,
+                    pose_tracker.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=1, circle_radius=1),
+                    pose_tracker.mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=1)
+                )
+
+            # 2. Face Detection (Identity Check)
+            # Only run every 3rd frame to save CPU
+            if frame_count % 3 == 0:
+                small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+                rgb_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+                
+                # Detect faces
                 try:
-                    # Resize for faster detection
-                    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-                    gray_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
-                    rgb_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+                    faces = face_cascade.detectMultiScale(
+                        cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY), 
+                        1.1, 4, minSize=(30, 30)
+                    )
                     
-                    # 1. Detect faces using Cascade (Faster than HOG/CNN on Pi)
-                    faces = face_cascade.detectMultiScale(gray_small, 1.1, 4)
-                    
-                    # Store for drawing
-                    scaled_faces = []
+                    found_target_face = False
                     
                     for (x, y, w, h) in faces:
-                        # Scale up to original size for drawing/driving
-                        x_real = x * 4
-                        y_real = y * 4
-                        w_real = w * 4
-                        h_real = h * 4
-                        scaled_faces.append((x_real, y_real, w_real, h_real))
+                        # Draw generic box
+                        # Scale up
+                        top, right, bottom, left = y*2, (x+w)*2, (y+h)*2, x*2
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
                         
-                        # Tracking Logic
-                        if follow_mode_active and bot:
-                            # 2. MATCHING: Check if this is the target person
-                            is_target = False
-                            color = (0, 0, 255) # Red = Unknown
-                            
-                            if target_person_encodings:
-                                try:
-                                    # Ensure contiguous array for dlib to prevent segfaults
-                                    rgb_small_safe = np.ascontiguousarray(rgb_small)
-                                    
-                                    # Extract face ROI from RGB frame for encoding
-                                    # face_recognition expects (top, right, bottom, left)
-                                    print(f"🔍 Matching face at {x*4},{y*4}...")
-                                    face_encoding = face_recognition.face_encodings(
-                                        rgb_small_safe, 
-                                        [(y, x+w, y+h, x)]
-                                    )[0]
-                                    
-                                    # Match against enrolled person
-                                    # Use loose threshold (0.7) for robust tracking in bad lighting
-                                    is_match, conf, _ = match_target_person(
-                                        face_encoding, 
-                                        target_person_encodings,
-                                        threshold=0.7
-                                    )
-                                    
-                                    if is_match:
-                                        is_target = True
-                                        color = (0, 255, 0) # Green = Target
-                                        if generate_frames.frame_count % 10 == 0:
-                                            print(f"✅ Matched! Dist: {(1-conf):.2f}")
-                                        cv2.putText(frame, f"MATCH ({int(conf*100)}%)", (x_real, y_real-30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                                    else:
-                                        if generate_frames.frame_count % 30 == 0:
-                                            print(f"❌ Face detected but not matched (Conf: {conf:.2f})")
-
-                                except Exception as e:
-                                    print(f"❌ Matching error: {e}")
-                            else:
-                                # No target set -> Track generic
-                                is_target = True
-                                color = (0, 255, 0)
-                                if generate_frames.frame_count % 30 == 0:
-                                    print("ℹ️ Tracking generic face (no target set)")
-
-                            # 3. DRIVING logic
-                            if is_target:
-                                cx = x_real + w_real // 2
-                                error = cx - 320
-                                
-                                # Print driving logic debug
-                                if generate_frames.frame_count % 10 == 0:
-                                    direction = "CENTER"
-                                    if error > DEAD_ZONE: direction = "RIGHT"
-                                    elif error < -DEAD_ZONE: direction = "LEFT"
-                                    
-                                    distance_status = "OK"
-                                    if w_real < 100: distance_status = "TOO FAR"
-                                    elif w_real > 200: distance_status = "TOO CLOSE"
-                                    
-                                    print(f"🚗 Drive: {direction} (Err: {error}), Dist: {distance_status} (W: {w_real})")
-
-                                if abs(error) > DEAD_ZONE:
-                                    if error > 0: # Right
-                                        left_mtr, right_mtr = TURN_SPEED_TRACK, -TURN_SPEED_TRACK
-                                    else: # Left
-                                        left_mtr, right_mtr = -TURN_SPEED_TRACK, TURN_SPEED_TRACK
-                                else:
-                                    if w_real < 100: # Too far
-                                        left_mtr, right_mtr = AUTO_SPEED, AUTO_SPEED
-                                    elif w_real > 200: # Too close
-                                        left_mtr, right_mtr = -AUTO_SPEED, -AUTO_SPEED
-                                    else:
-                                        left_mtr, right_mtr = 0, 0
-                                
-                                # Execute drive
-                                bot.drive(left_mtr, right_mtr)
-                                break # Follow just one target
+                        # Check Identity if we have a target
+                        if target_person_encodings:
+                            # Extract face
+                            face_img = rgb_small[y:y+h, x:x+w]
+                            if face_img.size > 0:
+                                face_img = np.ascontiguousarray(face_img)
+                                encodings = face_recognition.face_encodings(face_img)
+                                if encodings:
+                                    match, conf, _ = match_target_person(encodings[0], target_person_encodings, 0.65)
+                                    if match:
+                                        found_target_face = True
+                                        cv2.putText(frame, f"TARGET {conf:.2f}", (left, top-10), 
+                                                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                    
+                    if found_target_face:
+                        is_target_provisional = True
+                    else:
+                        is_target_provisional = False
                         
-                    generate_frames.last_faces = scaled_faces
-
                 except Exception as e:
-                    print(f"Detection error: {e}")
-            
-            # Draw persistent boxes
-            if hasattr(generate_frames, "last_faces"):
-                for (x, y, w, h) in generate_frames.last_faces:
-                    color = (0, 255, 0) if follow_mode_active else (255, 0, 0)
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
-                    if follow_mode_active:
-                         cv2.putText(frame, "TRACKING", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        
-        # Stop if no faces found in tracking mode (safety)
-        if follow_mode_active and bot and generate_frames.frame_count % 3 == 0 and (not hasattr(generate_frames, "last_faces") or len(generate_frames.last_faces) == 0):
-            bot.stop()
+                    print(f"Face Error: {e}")
+
+            # 3. Driving Logic (Hybrid)
+            if follow_mode_active and bot and not manual_mode_active:
+                cmd = "STOP"
+                speed = AUTO_SPEED
+                
+                # Logic: If we see target face OR (we are locked on and see a body), drive.
+                # For safety, require Target Face recently? 
+                # Let's use: If is_target_provisional AND mp_pos is available -> Valid Track
+                
+                if is_target_provisional and mp_pos:
+                    # Use MediaPipe for control
+                    if mp_depth == 'far':
+                         if mp_pos == 'center':
+                             bot.drive(speed, speed)
+                             cmd = "FORWARD"
+                         elif mp_pos == 'left':
+                             bot.drive(int(speed*0.5), speed)
+                             cmd = "FWD-LEFT"
+                         elif mp_pos == 'right':
+                             bot.drive(speed, int(speed*0.5))
+                             cmd = "FWD-RIGHT"
+                    elif mp_depth == 'near':
+                         bot.drive(-speed, -speed)
+                         cmd = "BACKWARD"
+                    else: # Medium
+                         if mp_pos == 'center':
+                             bot.stop()
+                             cmd = "STOP (OPTIMAL)"
+                         elif mp_pos == 'left':
+                             bot.drive(-speed, speed) # Rotate
+                             cmd = "ROTATE-LEFT" 
+                         elif mp_pos == 'right':
+                             bot.drive(speed, -speed) # Rotate
+                             cmd = "ROTATE-RIGHT"
+                else:
+                    bot.stop()
+                    cmd = "STOP (NO TARGET)"
+
+                if cmd != last_driving_command and frame_count % 10 == 0:
+                    print(f"🚗 Drive: {cmd} (Pos: {mp_pos}, Depth: {mp_depth})")
+                    last_driving_command = cmd
 
         # Encode frame
         ret, buffer = cv2.imencode('.jpg', frame)

@@ -19,8 +19,8 @@ pyttsx3>=2.90
 pydub>=0.25.1
 
 # Computer Vision (for navis_hybrid.py)
-opencv-python>=4.8.0
-numpy>=1.24.0
+opencv-python<=4.9.0.80
+numpy<2
 
 # Serial Communication
 pyserial>=3.5
@@ -30,3 +30,4 @@ pyserial>=3.5
 face_recognition
 dlib
 cmake
+mediapipe
