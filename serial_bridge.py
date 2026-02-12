@@ -40,6 +40,70 @@ class RobotBridge:
 
     def stop(self):
         self.drive(0, 0)
+    
+    def send_command(self, cmd):
+        """Send raw command to Arduino"""
+        if self.ser:
+            try:
+                self.ser.write(f"{cmd}\n".encode('utf-8'))
+                self.ser.flush()
+            except:
+                print(f"⚠️ Command send failed: {cmd}")
+    
+    # ============================================
+    #   HAND CONTROLS
+    # ============================================
+    def open_left_hand(self):
+        """Open left hand (all fingers)"""
+        self.send_command("LC")
+    
+    def close_left_hand(self):
+        """Close left hand (all fingers)"""
+        self.send_command("LO")
+    
+    def open_right_hand(self):
+        """Open right hand (all fingers)"""
+        self.send_command("RC")
+    
+    def close_right_hand(self):
+        """Close right hand (all fingers)"""
+        self.send_command("RO")
+    
+    # ============================================
+    #   WRIST CONTROLS
+    # ============================================
+    def set_left_wrist(self, angle):
+        """Set left wrist angle (0-180)"""
+        angle = max(0, min(180, int(angle)))
+        self.send_command(f"WL{angle}")
+    
+    def set_right_wrist(self, angle):
+        """Set right wrist angle (0-180)"""
+        angle = max(0, min(180, int(angle)))
+        self.send_command(f"WR{angle}")
+    
+    # ============================================
+    #   BICEP CONTROLS
+    # ============================================
+    def left_bicep_up(self):
+        """Move left bicep to up position"""
+        self.send_command("BLU")
+    
+    def left_bicep_down(self):
+        """Move left bicep to down position"""
+        self.send_command("BLD")
+    
+    def right_bicep_up(self):
+        """Move right bicep to up position"""
+        self.send_command("BRU")
+    
+    def right_bicep_down(self):
+        """Move right bicep to down position"""
+        self.send_command("BRD")
+    
+    def stop_biceps(self):
+        """Emergency stop for all bicep motors"""
+        self.send_command("BS")
 
     def close(self):
         if self.ser:
