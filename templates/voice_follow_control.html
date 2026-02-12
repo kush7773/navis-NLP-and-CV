@@ -277,6 +277,58 @@
                 .success {
                         color: #4ade80;
                 }
+
+                /* Video & Joystick Panel */
+                .video-container {
+                        width: 100%;
+                        border-radius: 15px;
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                        border: 2px solid rgba(255, 255, 255, 0.2);
+                        position: relative;
+                        background: #000;
+                }
+
+                .video-feed {
+                        width: 100%;
+                        display: block;
+                }
+
+                .joystick-panel {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 10px;
+                        max-width: 200px;
+                        margin: 20px auto;
+                }
+
+                .joy-btn {
+                        background: rgba(255, 255, 255, 0.1);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 10px;
+                        aspect-ratio: 1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 24px;
+                        cursor: pointer;
+                        user-select: none;
+                        transition: all 0.1s;
+                }
+
+                .joy-btn:active {
+                        background: rgba(0, 212, 255, 0.3);
+                        transform: scale(0.95);
+                }
+
+                .joy-center {
+                        background: rgba(255, 107, 107, 0.2);
+                        border-color: rgba(255, 107, 107, 0.5);
+                }
+
+                .joy-center:active {
+                        background: rgba(255, 107, 107, 0.4);
+                }
         </style>
 </head>
 
@@ -284,6 +336,34 @@
         <div class="container">
                 <h1>🤖 Navis Control</h1>
                 <p class="subtitle">Voice + Follow Mode</p>
+
+                <!-- Video Feed -->
+                <div class="video-container">
+                        <img src="/video_feed" class="video-feed" alt="Live Camera Feed">
+                        <div style="position: absolute; top: 10px; right: 10px;">
+                                <button onclick="toggleFaceDetection()"
+                                        style="background: rgba(0,0,0,0.5); border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px;">
+                                        👁️ Face AI
+                                </button>
+                        </div>
+                </div>
+
+                <!-- Joystick Controls -->
+                <div class="joystick-panel">
+                        <div></div>
+                        <button class="joy-btn" onmousedown="drive('F')" ontouchstart="drive('F')"
+                                onmouseup="drive('S')" ontouchend="drive('S')">⬆️</button>
+                        <div></div>
+                        <button class="joy-btn" onmousedown="drive('L')" ontouchstart="drive('L')"
+                                onmouseup="drive('S')" ontouchend="drive('S')">⬅️</button>
+                        <button class="joy-btn joy-center" onclick="drive('S')">🛑</button>
+                        <button class="joy-btn" onmousedown="drive('R')" ontouchstart="drive('R')"
+                                onmouseup="drive('S')" ontouchend="drive('S')">➡️</button>
+                        <div></div>
+                        <button class="joy-btn" onmousedown="drive('B')" ontouchstart="drive('B')"
+                                onmouseup="drive('S')" ontouchend="drive('S')">⬇️</button>
+                        <div></div>
+                </div>
 
                 <!-- Follow Mode Indicator -->
                 <div class="follow-indicator" id="followIndicator">
@@ -329,33 +409,64 @@
                         </div>
                 </div>
 
-		<!-- Hand & Arm Controls -->
-		<div class="text-section">
-			<h3 onclick="document.getElementById('handPanel').style.display=document.getElementById('handPanel').style.display==='none'?'block':'none'">🖐️ Hand & Arm Controls (Tap)</h3>
-			<div id="handPanel" style="display:none;padding:15px;background:rgba(255,255,255,0.05);border-radius:15px;">
-				<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
-					<button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'LC'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:12px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:12px;color:#00d4ff;font-weight:bold;">👐 Left Open</button>
-					<button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'RC'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:12px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:12px;color:#00ff88;font-weight:bold;">👐 Right Open</button>
-					<button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'LO'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:12px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:12px;color:#00d4ff;font-weight:bold;">✊ Left Close</button>
-					<button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'RO'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:12px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:12px;color:#00ff88;font-weight:bold;">✊ Right Close</button>
-				</div>
-				<div style="margin:15px 0;">
-					<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;"><span>Left Wrist</span><span id="lw">90°</span></div>
-					<input type="range" min="0" max="180" value="90" oninput="document.getElementById('lw').textContent=this.value+'°';fetch('/wrist_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({side:'L',angle:this.value})})" style="width:100%;height:6px;border-radius:5px;background:rgba(255,255,255,0.2);">
-				</div>
-				<div style="margin:15px 0;">
-					<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;"><span>Right Wrist</span><span id="rw">90°</span></div>
-					<input type="range" min="0" max="180" value="90" oninput="document.getElementById('rw').textContent=this.value+'°';fetch('/wrist_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({side:'R',angle:this.value})})" style="width:100%;height:6px;border-radius:5px;background:rgba(255,255,255,0.2);">
-				</div>
-				<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">
-					<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BLU'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:10px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:10px;color:#00d4ff;font-weight:bold;">⬆️ L Up</button>
-					<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BRU'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:10px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:10px;color:#00ff88;font-weight:bold;">⬆️ R Up</button>
-					<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BLD'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:10px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:10px;color:#00d4ff;font-weight:bold;">⬇️ L Down</button>
-					<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BRD'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="padding:10px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:10px;color:#00ff88;font-weight:bold;">⬇️ R Down</button>
-				</div>
-				<button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BS'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))" style="width:100%;padding:15px;background:linear-gradient(135deg,#ff6b6b,#ee5a6f);border:none;border-radius:12px;color:white;font-weight:bold;margin-top:10px;">�� STOP BICEPS</button>
-			</div>
-		</div>
+                <!-- Hand & Arm Controls -->
+                <div class="text-section">
+                        <h3
+                                onclick="document.getElementById('handPanel').style.display=document.getElementById('handPanel').style.display==='none'?'block':'none'">
+                                🖐️ Hand & Arm Controls (Tap)</h3>
+                        <div id="handPanel"
+                                style="display:none;padding:15px;background:rgba(255,255,255,0.05);border-radius:15px;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+                                        <button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'LC'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                                style="padding:12px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:12px;color:#00d4ff;font-weight:bold;">👐
+                                                Left Open</button>
+                                        <button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'RC'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                                style="padding:12px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:12px;color:#00ff88;font-weight:bold;">👐
+                                                Right Open</button>
+                                        <button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'LO'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                                style="padding:12px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:12px;color:#00d4ff;font-weight:bold;">✊
+                                                Left Close</button>
+                                        <button onclick="fetch('/hand_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'RO'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                                style="padding:12px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:12px;color:#00ff88;font-weight:bold;">✊
+                                                Right Close</button>
+                                </div>
+                                <div style="margin:15px 0;">
+                                        <div
+                                                style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;">
+                                                <span>Left Wrist</span><span id="lw">90°</span>
+                                        </div>
+                                        <input type="range" min="0" max="180" value="90"
+                                                oninput="document.getElementById('lw').textContent=this.value+'°';fetch('/wrist_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({side:'L',angle:this.value})})"
+                                                style="width:100%;height:6px;border-radius:5px;background:rgba(255,255,255,0.2);">
+                                </div>
+                                <div style="margin:15px 0;">
+                                        <div
+                                                style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;">
+                                                <span>Right Wrist</span><span id="rw">90°</span>
+                                        </div>
+                                        <input type="range" min="0" max="180" value="90"
+                                                oninput="document.getElementById('rw').textContent=this.value+'°';fetch('/wrist_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({side:'R',angle:this.value})})"
+                                                style="width:100%;height:6px;border-radius:5px;background:rgba(255,255,255,0.2);">
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">
+                                        <button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BLU'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                                style="padding:10px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:10px;color:#00d4ff;font-weight:bold;">⬆️
+                                                L Up</button>
+                                        <button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BRU'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                                style="padding:10px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:10px;color:#00ff88;font-weight:bold;">⬆️
+                                                R Up</button>
+                                        <button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BLD'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                                style="padding:10px;border:2px solid #00d4ff;background:rgba(255,255,255,0.05);border-radius:10px;color:#00d4ff;font-weight:bold;">⬇️
+                                                L Down</button>
+                                        <button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BRD'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                                style="padding:10px;border:2px solid #00ff88;background:rgba(255,255,255,0.05);border-radius:10px;color:#00ff88;font-weight:bold;">⬇️
+                                                R Down</button>
+                                </div>
+                                <button onclick="fetch('/bicep_control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'BS'})}).then(r=>r.json()).then(d=>alert(d.message||d.error))"
+                                        style="width:100%;padding:15px;background:linear-gradient(135deg,#ff6b6b,#ee5a6f);border:none;border-radius:12px;color:white;font-weight:bold;margin-top:10px;">��
+                                        STOP BICEPS</button>
+                        </div>
+                </div>
         </div>
 
         <script>
@@ -554,6 +665,32 @@
 
                 // Initialize
                 initMicrophone();
+
+                // Joystick Control
+                async function drive(command) {
+                        try {
+                                await fetch('/manual_control', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ command: command })
+                                });
+                        } catch (e) {
+                                console.error("Drive error:", e);
+                        }
+                }
+
+                // Toggle Face Detection
+                async function toggleFaceDetection() {
+                        try {
+                                const res = await fetch('/toggle_face_detection', { method: 'POST' });
+                                const data = await res.json();
+                                statusDiv.innerHTML = data.enabled ?
+                                        '<span class="success">✅ Face AI Enabled</span>' :
+                                        '<span style="color:yellow">⏸️ Face AI Disabled</span>';
+                        } catch (e) {
+                                console.error("Toggle error:", e);
+                        }
+                }
         </script>
 </body>
 
