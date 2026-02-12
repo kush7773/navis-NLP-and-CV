@@ -16,6 +16,7 @@ from config import (
     ROBOT_NAME, 
     FOLLOW_COMMANDS, 
     STOP_COMMANDS,
+    RASPBERRY_PI_IP,
     SERIAL_PORT,
     SERIAL_BAUD,
     MANUAL_SPEED,
