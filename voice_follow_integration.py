@@ -3,9 +3,10 @@ Voice-Activated Follow Mode Integration
 Combines voice commands with existing CV face tracking
 """
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 from llm_handler_updated import get_llm
 from tts import RobotMouth
+from serial_bridge import RobotBridge
 import speech_recognition as sr
 import io
 import os
@@ -15,10 +16,22 @@ from config import (
     ROBOT_NAME, 
     FOLLOW_COMMANDS, 
     STOP_COMMANDS,
-    RASPBERRY_PI_IP
+    RASPBERRY_PI_IP,
+    SERIAL_PORT,
+    SERIAL_BAUD
 )
 import subprocess
 import signal
+import cv2
+import numpy as np
+import pickle
+from datetime import datetime
+from face_recognition_utils import (
+    generate_face_encoding,
+    match_face_to_target,
+    save_person_encodings,
+    load_person_encodings
+)
 
 app = Flask(__name__)
 
@@ -26,11 +39,30 @@ app = Flask(__name__)
 try:
     llm = get_llm()
     mouth = RobotMouth()
+    bot = RobotBridge(port=SERIAL_PORT, baud_rate=SERIAL_BAUD)
     print(f"✅ Voice + Follow Integration Initialized")
 except Exception as e:
     print(f"⚠️ Warning: Some components failed to initialize: {e}")
     llm = None
     mouth = None
+    bot = None
+
+# Camera initialization
+try:
+    cap = cv2.VideoCapture(0)
+    cap.set(3, 640)  # Width
+    cap.set(4, 480)  # Height
+    camera_available = True
+    print(f"✅ Camera Initialized")
+except Exception as e:
+    print(f"⚠️ Warning: Camera failed to initialize: {e}")
+    camera_available = False
+    cap = None
+
+# Person-specific tracking
+target_person_encodings = {}  # {"front": encoding, "left": encoding, etc.}
+target_person_name = ""
+match_threshold = 0.6
 
 # Global state for follow mode
 follow_mode_active = False
@@ -264,6 +296,222 @@ def health():
         'follow_active': follow_mode_active,
         'ip': RASPBERRY_PI_IP
     })
+
+# ============================================
+#   PERSON TRACKING ENDPOINTS
+# ============================================
+
+@app.route('/upload_person_photo', methods=['POST'])
+def upload_person_photo():
+    """Upload front/back/side photos to train on person"""
+    global target_person_encodings, target_person_name
+    
+    data = request.json
+    image_data = data.get('image')  # base64 encoded
+    view_name = data.get('view', 'front')  # front, back, left, right
+    person_name = data.get('name', 'Target Person')
+    
+    if not image_data:
+        return jsonify({'error': 'No image data'}), 400
+    
+    try:
+        # Decode base64 image
+        import base64
+        image_bytes = base64.b64decode(image_data.split(',')[1])
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        # Generate face encoding
+        encoding = generate_face_encoding(img)
+        
+        if encoding is None:
+            return jsonify({'error': 'No face detected in image'}), 400
+        
+        # Store encoding
+        target_person_encodings[view_name] = encoding
+        target_person_name = person_name
+        
+        # Save to disk
+        save_person_encodings(target_person_encodings, target_person_name)
+        
+        return jsonify({
+            'success': True,
+            'message': f'{view_name.capitalize()} view saved',
+            'total_views': len(target_person_encodings)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/capture_person', methods=['POST'])
+def capture_person():
+    """Capture current frame and train on person"""
+    global target_person_encodings, target_person_name, cap
+    
+    if not camera_available or cap is None:
+        return jsonify({'error': 'Camera not available'}), 500
+    
+    data = request.json
+    view_name = data.get('view', 'front')
+    person_name = data.get('name', 'Target Person')
+    
+    try:
+        # Capture frame
+        ret, frame = cap.read()
+        if not ret:
+            return jsonify({'error': 'Failed to capture frame'}), 500
+        
+        # Generate encoding
+        encoding = generate_face_encoding(frame)
+        
+        if encoding is None:
+            return jsonify({'error': 'No face detected in frame'}), 400
+        
+        # Store encoding
+        target_person_encodings[view_name] = encoding
+        target_person_name = person_name
+        
+        # Save to disk
+        save_person_encodings(target_person_encodings, target_person_name)
+        
+        return jsonify({
+            'success': True,
+            'message': f'{view_name.capitalize()} view captured',
+            'total_views': len(target_person_encodings)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/clear_person', methods=['POST'])
+def clear_person():
+    """Clear all person training data"""
+    global target_person_encodings, target_person_name
+    
+    target_person_encodings = {}
+    target_person_name = ""
+    
+    # Delete saved file
+    try:
+        if os.path.exists('target_person.pkl'):
+            os.remove('target_person.pkl')
+    except:
+        pass
+    
+    return jsonify({
+        'success': True,
+        'message': 'Training data cleared'
+    })
+
+
+@app.route('/person_status')
+def person_status():
+    """Get enrollment status"""
+    return jsonify({
+        'enrolled': len(target_person_encodings) > 0,
+        'name': target_person_name if len(target_person_encodings) > 0 else None,
+        'views': list(target_person_encodings.keys()),
+        'total_views': len(target_person_encodings)
+    })
+
+# ============================================
+#   HAND & ARM CONTROL ENDPOINTS
+# ============================================
+
+@app.route('/hand_control', methods=['POST'])
+def hand_control():
+    """Control robot hands (open/close)"""
+    if not bot:
+        return jsonify({'error': 'Robot not connected'}), 500
+    
+    data = request.json
+    command = data.get('command', '').upper()
+    
+    try:
+        if command == 'LC':
+            bot.open_left_hand()
+            return jsonify({'success': True, 'message': 'Left hand opened'})
+        elif command == 'LO':
+            bot.close_left_hand()
+            return jsonify({'success': True, 'message': 'Left hand closed'})
+        elif command == 'RC':
+            bot.open_right_hand()
+            return jsonify({'success': True, 'message': 'Right hand opened'})
+        elif command == 'RO':
+            bot.close_right_hand()
+            return jsonify({'success': True, 'message': 'Right hand closed'})
+        else:
+            return jsonify({'error': 'Invalid command'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/wrist_control', methods=['POST'])
+def wrist_control():
+    """Control robot wrists (0-180 degrees)"""
+    if not bot:
+        return jsonify({'error': 'Robot not connected'}), 500
+    
+    data = request.json
+    side = data.get('side', '').upper()
+    angle = data.get('angle', 90)
+    
+    try:
+        angle = int(angle)
+        if angle < 0 or angle > 180:
+            return jsonify({'error': 'Angle must be 0-180'}), 400
+        
+        if side == 'L':
+            bot.set_left_wrist(angle)
+            return jsonify({'success': True, 'message': f'Left wrist set to {angle}°'})
+        elif side == 'R':
+            bot.set_right_wrist(angle)
+            return jsonify({'success': True, 'message': f'Right wrist set to {angle}°'})
+        else:
+            return jsonify({'error': 'Invalid side (use L or R)'}), 400
+    except ValueError:
+        return jsonify({'error': 'Invalid angle value'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/bicep_control', methods=['POST'])
+def bicep_control():
+    """Control robot biceps (up/down/stop)"""
+    if not bot:
+        return jsonify({'error': 'Robot not connected'}), 500
+    
+    data = request.json
+    command = data.get('command', '').upper()
+    
+    try:
+        if command == 'BLU':
+            bot.left_bicep_up()
+            return jsonify({'success': True, 'message': 'Left bicep moving up'})
+        elif command == 'BLD':
+            bot.left_bicep_down()
+            return jsonify({'success': True, 'message': 'Left bicep moving down'})
+        elif command == 'BRU':
+            bot.right_bicep_up()
+            return jsonify({'success': True, 'message': 'Right bicep moving up'})
+        elif command == 'BRD':
+            bot.right_bicep_down()
+            return jsonify({'success': True, 'message': 'Right bicep moving down'})
+        elif command == 'BS':
+            bot.stop_biceps()
+            return jsonify({'success': True, 'message': 'Biceps stopped'})
+        else:
+            return jsonify({'error': 'Invalid command'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/hand_control_page')
+def hand_control_page():
+    """Hand and arm control page"""
+    return render_template('hand_control.html')
 
 if __name__ == '__main__':
     print(f"\n{'='*60}")
