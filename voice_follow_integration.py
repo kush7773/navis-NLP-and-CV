@@ -28,8 +28,8 @@ import pickle
 from datetime import datetime
 from face_recognition_utils import (
     generate_face_encoding,
-    save_person_encodings,
-    load_person_encodings
+    save_target_encoding,
+    load_target_encoding
 )
 
 app = Flask(__name__)
@@ -330,8 +330,8 @@ def upload_person_photo():
         target_person_encodings[view_name] = encoding
         target_person_name = person_name
         
-        # Save to disk
-        save_person_encodings(target_person_encodings, target_person_name)
+        # Save to disk (save individual encoding with view)
+        save_target_encoding(encoding, person_name, view_name)
         
         return jsonify({
             'success': True,
@@ -371,8 +371,8 @@ def capture_person():
         target_person_encodings[view_name] = encoding
         target_person_name = person_name
         
-        # Save to disk
-        save_person_encodings(target_person_encodings, target_person_name)
+        # Save to disk (save individual encoding with view)
+        save_target_encoding(encoding, person_name, view_name)
         
         return jsonify({
             'success': True,
