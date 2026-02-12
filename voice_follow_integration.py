@@ -635,7 +635,10 @@ if __name__ == '__main__':
     print(f"\n{'='*60}\n")
     
     try:
-        app.run(host='0.0.0.0', port=VOICE_PORT, debug=False, threaded=True)
+        # Run with SSL ('adhoc' generates a self-signed cert on the fly)
+        # This is required for microphone access on non-localhost
+        print(f"🔒 Starting with SSL (HTTPS) to enable Microphone access")
+        app.run(host='0.0.0.0', port=VOICE_PORT, debug=False, threaded=True, ssl_context='adhoc')
     finally:
         # Cleanup on exit
         if navis_hybrid_process:
