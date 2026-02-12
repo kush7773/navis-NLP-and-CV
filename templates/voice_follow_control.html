@@ -351,17 +351,17 @@
                 <!-- Joystick Controls -->
                 <div class="joystick-panel">
                         <div></div>
-                        <button class="joy-btn" onmousedown="drive('F')" ontouchstart="drive('F')"
-                                onmouseup="drive('S')" ontouchend="drive('S')">⬆️</button>
+                        <button class="joy-btn" onmousedown="startDrive('F')" ontouchstart="startDrive('F')"
+                                onmouseup="stopDrive()" ontouchend="stopDrive()">⬆️</button>
                         <div></div>
-                        <button class="joy-btn" onmousedown="drive('L')" ontouchstart="drive('L')"
-                                onmouseup="drive('S')" ontouchend="drive('S')">⬅️</button>
-                        <button class="joy-btn joy-center" onclick="drive('S')">🛑</button>
-                        <button class="joy-btn" onmousedown="drive('R')" ontouchstart="drive('R')"
-                                onmouseup="drive('S')" ontouchend="drive('S')">➡️</button>
+                        <button class="joy-btn" onmousedown="startDrive('L')" ontouchstart="startDrive('L')"
+                                onmouseup="stopDrive()" ontouchend="stopDrive()">⬅️</button>
+                        <button class="joy-btn joy-center" onclick="stopDrive()">🛑</button>
+                        <button class="joy-btn" onmousedown="startDrive('R')" ontouchstart="startDrive('R')"
+                                onmouseup="stopDrive()" ontouchend="stopDrive()">➡️</button>
                         <div></div>
-                        <button class="joy-btn" onmousedown="drive('B')" ontouchstart="drive('B')"
-                                onmouseup="drive('S')" ontouchend="drive('S')">⬇️</button>
+                        <button class="joy-btn" onmousedown="startDrive('B')" ontouchstart="startDrive('B')"
+                                onmouseup="stopDrive()" ontouchend="stopDrive()">⬇️</button>
                         <div></div>
                 </div>
 
@@ -406,6 +406,46 @@
                         <div class="input-group">
                                 <input type="text" id="textInput" placeholder="Type command or question...">
                                 <button class="send" onclick="sendText()">Send</button>
+                        </div>
+                </div>
+
+                <!-- Person Training -->
+                <div class="text-section">
+                        <h3
+                                onclick="document.getElementById('trainingPanel').style.display=document.getElementById('trainingPanel').style.display==='none'?'block':'none'">
+                                👤 Person Training (Tap)
+                        </h3>
+                        <div id="trainingPanel"
+                                style="display:none;padding:15px;background:rgba(255,255,255,0.05);border-radius:15px;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+                                        <button onclick="capturePerson('front')"
+                                                style="padding:10px;border:1px solid #4ade80;background:rgba(74,222,128,0.1);color:#4ade80;border-radius:10px;">
+                                                📸 Capture Front
+                                        </button>
+                                        <button onclick="capturePerson('back')"
+                                                style="padding:10px;border:1px solid #4ade80;background:rgba(74,222,128,0.1);color:#4ade80;border-radius:10px;">
+                                                📸 Capture Back
+                                        </button>
+                                </div>
+
+                                <div style="margin-bottom:15px;">
+                                        <input type="text" id="personName" placeholder="Enter Name"
+                                                style="width:100%;margin-bottom:10px;padding:10px;border-radius:10px;border:none;">
+                                        <input type="file" id="uploadPhoto" accept="image/*" style="display:none"
+                                                onchange="uploadPhoto(this)">
+                                        <button onclick="document.getElementById('uploadPhoto').click()"
+                                                style="width:100%;padding:10px;background:#00d4ff;border:none;border-radius:10px;color:white;font-weight:bold;">
+                                                📤 Upload Photo
+                                        </button>
+                                </div>
+
+                                <button onclick="clearPerson()"
+                                        style="width:100%;padding:10px;background:#ff6b6b;border:none;border-radius:10px;color:white;">
+                                        🗑️ Clear Training Data
+                                </button>
+
+                                <div id="trainingStatus"
+                                        style="margin-top:10px;font-size:12px;opacity:0.8;text-align:center;"></div>
                         </div>
                 </div>
 
@@ -667,6 +707,22 @@
                 initMicrophone();
 
                 // Joystick Control
+                let driveInterval = null;
+
+                function startDrive(command) {
+                        if (driveInterval) clearInterval(driveInterval);
+                        drive(command); // Send immediate
+                        driveInterval = setInterval(() => drive(command), 200); // Repeat every 200ms
+                }
+
+                function stopDrive() {
+                        if (driveInterval) {
+                                clearInterval(driveInterval);
+                                driveInterval = null;
+                        }
+                        drive('S');
+                }
+
                 async function drive(command) {
                         try {
                                 await fetch('/manual_control', {
@@ -678,6 +734,69 @@
                                 console.error("Drive error:", e);
                         }
                 }
+
+                // Person Training Functions
+                async function capturePerson(view) {
+                        const name = document.getElementById('personName').value || "Target Person";
+                        try {
+                                const res = await fetch('/capture_person', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ name: name, view: view })
+                                });
+                                const data = await res.json();
+                                alert(data.message || data.error);
+                                updatePersonStatus();
+                        } catch (e) { alert("Error: " + e); }
+                }
+
+                async function uploadPhoto(input) {
+                        const file = input.files[0];
+                        if (!file) return;
+
+                        const reader = new FileReader();
+                        reader.onload = async function (e) {
+                                const name = document.getElementById('personName').value || "Target Person";
+                                try {
+                                        const res = await fetch('/upload_person_photo', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                        image: e.target.result,
+                                                        name: name,
+                                                        view: 'front' // Default to front for uploads
+                                                })
+                                        });
+                                        const data = await res.json();
+                                        alert(data.message || data.error);
+                                        updatePersonStatus();
+                                } catch (err) { alert("Upload error: " + err); }
+                        };
+                        reader.readAsDataURL(file);
+                }
+
+                async function clearPerson() {
+                        if (!confirm("Clear all training data?")) return;
+                        await fetch('/clear_person', { method: 'POST' });
+                        updatePersonStatus();
+                }
+
+                async function updatePersonStatus() {
+                        try {
+                                const res = await fetch('/person_status');
+                                const data = await res.json();
+                                const statusDiv = document.getElementById('trainingStatus');
+                                if (data.enrolled) {
+                                        statusDiv.innerHTML = `✅ Trained: ${data.name} (${data.total_views} views)`;
+                                } else {
+                                        statusDiv.innerHTML = `⚠️ No person enrolled`;
+                                }
+                        } catch (e) { }
+                }
+
+                // Update status on load
+                updatePersonStatus();
+
 
                 // Toggle Face Detection
                 async function toggleFaceDetection() {

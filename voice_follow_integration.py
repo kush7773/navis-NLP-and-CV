@@ -82,25 +82,39 @@ def generate_frames():
             
         # Add overlay if enabled
         if show_face_detection:
-            # Person detection logic here (simplified for streaming)
-            # Detect faces
-            try:
-                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                face_locations = face_recognition.face_locations(rgb_frame, model='hog')
-                
-                for (top, right, bottom, left) in face_locations:
-                    # Draw box
+            # Skip frames for detection performance (process every 3rd frame)
+            if not hasattr(generate_frames, "frame_count"):
+                generate_frames.frame_count = 0
+            
+            generate_frames.frame_count += 1
+            
+            # Draw persistent boxes from last detection
+            if hasattr(generate_frames, "last_faces"):
+                for (top, right, bottom, left) in generate_frames.last_faces:
                     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+
+            if generate_frames.frame_count % 3 == 0:
+                try:
+                    # Resize for faster detection
+                    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+                    rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
                     
-                    # If we have target person, try to match
-                    if len(target_person_encodings) > 0:
-                        face_encodings = face_recognition.face_encodings(rgb_frame, [(top, right, bottom, left)])
-                        if len(face_encodings) > 0:
-                            # Match logic
-                            pass # Simplified for stream speed
+                    # Detect faces
+                    face_locations = face_recognition.face_locations(rgb_small_frame, model='hog')
+                    
+                    # Scale back up
+                    scaled_locations = []
+                    for (top, right, bottom, left) in face_locations:
+                        top *= 4
+                        right *= 4
+                        bottom *= 4
+                        left *= 4
+                        scaled_locations.append((top, right, bottom, left))
+                    
+                    generate_frames.last_faces = scaled_locations
                             
-            except Exception as e:
-                pass
+                except Exception as e:
+                    print(f"Detection error: {e}")
 
         # Encode frame
         ret, buffer = cv2.imencode('.jpg', frame)
