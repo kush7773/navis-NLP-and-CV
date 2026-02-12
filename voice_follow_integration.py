@@ -181,6 +181,7 @@ def generate_frames():
     last_driving_command = "STOP"
     search_mode = False
     is_target_provisional = False
+    last_face_seen_time = 0
     
     # Ensure camera is initialized
     if not 'cap' in globals() or cap is None:
@@ -263,22 +264,28 @@ def generate_frames():
                     
                     if found_target_face:
                         is_target_provisional = True
+                        last_face_seen_time = time.time()  # Refresh lock
                     else:
                         is_target_provisional = False
                         
                 except Exception as e:
                     print(f"Face Error: {e}")
 
-            # 3. Driving Logic (Hybrid)
+            # 3. Driving Logic (Hybrid with Persistence)
             if follow_mode_active and bot and not manual_mode_active:
                 cmd = "STOP"
                 speed = AUTO_SPEED
                 
-                # Logic: If we see target face OR (we are locked on and see a body), drive.
-                # For safety, require Target Face recently? 
-                # Let's use: If is_target_provisional AND mp_pos is available -> Valid Track
+                # Persistence Check
+                time_since_face = time.time() - last_face_seen_time
+                is_locked = (time_since_face < 3.5)  # 3.5 second buffer
                 
-                if is_target_provisional and mp_pos:
+                if is_locked and mp_pos:
+                    # Visual feedback for sticky tracking
+                    if not is_target_provisional:
+                        cv2.putText(frame, f"LOCKED ({3.5-time_since_face:.1f}s)", (50, 50), 
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+
                     # Use MediaPipe for control
                     if mp_depth == 'far':
                          if mp_pos == 'center':
