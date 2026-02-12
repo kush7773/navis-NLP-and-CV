@@ -170,10 +170,11 @@ frames_lock = threading.Lock()
 follow_mode_active = False
 target_person_encodings = {}
 target_person_name = ""
+manual_mode_active = False
 
 def generate_frames():
     """Video streaming generator function with Hybrid Tracking"""
-    global cap, show_face_detection, target_person_encodings, target_person_name
+    global cap, show_face_detection, target_person_encodings, target_person_name, manual_mode_active
     
     # Tracking State
     frame_count = 0
