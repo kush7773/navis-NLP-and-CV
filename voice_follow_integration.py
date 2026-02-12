@@ -28,7 +28,6 @@ import pickle
 from datetime import datetime
 from face_recognition_utils import (
     generate_face_encoding,
-    match_face_to_target,
     save_person_encodings,
     load_person_encodings
 )
