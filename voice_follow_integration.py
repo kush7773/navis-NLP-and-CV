@@ -52,12 +52,33 @@ except Exception as e:
 
 # Camera initialization
 try:
-    cap = cv2.VideoCapture(0)
+    # Try indices 0, 1, 2 to find working camera
+    video_source = 0
+    cap = None
+    for i in range(3):
+        print(f"📷 Testing camera index {i}...")
+        temp_cap = cv2.VideoCapture(i)
+        if temp_cap.isOpened():
+            ret, _ = temp_cap.read()
+            if ret:
+                cap = temp_cap
+                video_source = i
+                print(f"✅ Camera found at index {i}")
+                break
+            else:
+                temp_cap.release()
+        
+    if cap is None:
+        raise Exception("No working camera found on indices 0-2")
+        
     cap.set(3, 640)  # Width
     cap.set(4, 480)  # Height
     camera_available = True
-    print(f"✅ Camera Initialized")
+    print(f"✅ Camera Initialized on index {video_source}")
 except Exception as e:
+    print(f"⚠️ Warning: Camera failed to initialize: {e}")
+    camera_available = False
+    cap = None
     print(f"⚠️ Warning: Camera failed to initialize: {e}")
     camera_available = False
     cap = None
