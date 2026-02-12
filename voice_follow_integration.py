@@ -635,10 +635,16 @@ if __name__ == '__main__':
     print(f"\n{'='*60}\n")
     
     try:
-        # Run with SSL ('adhoc' generates a self-signed cert on the fly)
-        # This is required for microphone access on non-localhost
-        print(f"🔒 Starting with SSL (HTTPS) to enable Microphone access")
-        app.run(host='0.0.0.0', port=VOICE_PORT, debug=False, threaded=True, ssl_context='adhoc')
+        # Run with SSL (HTTPS) for microphone access
+        # Requires cert.pem and key.pem (run generate_cert.sh)
+        if os.path.exists('cert.pem') and os.path.exists('key.pem'):
+            print(f"🔐 Starting with SSL (HTTPS) using cert.pem/key.pem")
+            app.run(host='0.0.0.0', port=VOICE_PORT, debug=False, threaded=True, ssl_context=('cert.pem', 'key.pem'))
+        else:
+            print(f"⚠️ SSL Certificates not found (cert.pem, key.pem)")
+            print(f"   Microphone might not work on remote devices.")
+            print(f"   Running in HTTP mode. Run ./generate_cert.sh to enable HTTPS.")
+            app.run(host='0.0.0.0', port=VOICE_PORT, debug=False, threaded=True)
     finally:
         # Cleanup on exit
         if navis_hybrid_process:
