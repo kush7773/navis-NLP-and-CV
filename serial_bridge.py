@@ -2,63 +2,53 @@ import serial
 import time
 
 class RobotBridge:
-    def __init__(self, wheel_port='/dev/ttyUSB0', hand_port='/dev/ttyUSB1', baud_rate=115200):
-        self.ser_wheels = None
-        self.ser_hands = None
-        self.wheel_port = wheel_port
-        self.hand_port = hand_port
+    def __init__(self, port='/dev/ttyUSB0', baud_rate=115200):
+        self.ser = None
+        self.port = port
         self.baud = baud_rate
         self.connect()
 
     def connect(self):
-        # Connect Wheels (ESP32)
         try:
-            self.ser_wheels = serial.Serial(self.wheel_port, self.baud, timeout=0.1)
-            time.sleep(2)
-            self.ser_wheels.reset_input_buffer()
-            print(f"✅ Wheels Connected: {self.wheel_port}")
+            # 1. Open Serial
+            self.ser = serial.Serial(self.port, self.baud, timeout=0.1) # Low timeout for speed
+            time.sleep(2) # Allow ESP32 to reset
+            
+            # 2. Flush any old garbage data
+            self.ser.reset_input_buffer()
+            self.ser.reset_output_buffer()
+            
+            print(f"✅ Bridge Connected: {self.port}")
         except Exception as e:
-            print(f"⚠️ Wheels Serial Error: {e}")
-            self.ser_wheels = None
-
-        # Connect Hands (Mega)
-        try:
-            self.ser_hands = serial.Serial(self.hand_port, self.baud, timeout=0.1)
-            time.sleep(2)
-            self.ser_hands.reset_input_buffer()
-            print(f"✅ Hands Connected: {self.hand_port}")
-        except Exception as e:
-            print(f"⚠️ Hands Serial Error: {e}")
-            self.ser_hands = None
+            print(f"⚠️ Serial Error: {e}")
+            self.ser = None
 
     def drive(self, left, right):
-        """Sends command to WHEELS: 'LEFT,RIGHT\n'"""
-        if self.ser_wheels:
+        """
+        Sends command: "LEFT,RIGHT\n"
+        """
+        if self.ser:
             try:
+                # Format: "150,150\n"
                 command = f"{int(left)},{int(right)}\n"
-                self.ser_wheels.write(command.encode('utf-8'))
-                self.ser_wheels.flush()
+                self.ser.write(command.encode('utf-8'))
+                self.ser.flush() # FORCE send immediately (No lag)
             except:
-                print("⚠️ Wheels Lost... Reconnecting")
+                # If write fails, try to reconnect once
+                print("⚠️ Connection Lost... Reconnecting")
                 self.connect()
 
     def stop(self):
         self.drive(0, 0)
-        # Also stop biceps?
-        self.send_command("BS")
     
     def send_command(self, cmd):
-        """Send command to HANDS (Arduino Mega)"""
-        if self.ser_hands:
+        """Send raw command to Arduino"""
+        if self.ser:
             try:
-                self.ser_hands.write(f"{cmd}\n".encode('utf-8'))
-                self.ser_hands.flush()
+                self.ser.write(f"{cmd}\n".encode('utf-8'))
+                self.ser.flush()
             except:
-                print(f"⚠️ Hands Comm Failed: {cmd}")
-        else:
-            # Fallback: some users might have everything on one port? 
-            # But here we STRICTLY separate.
-            pass
+                print(f"⚠️ Command send failed: {cmd}")
     
     # ============================================
     #   HAND CONTROLS

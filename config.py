@@ -37,14 +37,9 @@ ROBOT_CREATOR = "Team Robomanthan"
 MAX_RESPONSE_LENGTH = 100  # Maximum tokens in response (keep short for speech)
 RESPONSE_TEMPERATURE = 0.7  # 0.0 = deterministic, 1.0 = creative
 
-# ===== HARDWARE SETTINGS =====
-# Serial port for ESP32 motor controller (Wheels)
-WHEELS_PORT = "/dev/ttyUSB0"
-HANDS_PORT = "/dev/ttyUSB1"
+# Serial port for ESP32 motor controller
+SERIAL_PORT = "/dev/ttyUSB0"  # Change to /dev/ttyACM0 if needed
 SERIAL_BAUD = 115200
-
-# Legacy compatibility (maps to wheels)
-SERIAL_PORT = WHEELS_PORT
 
 # Servo settings
 SERVO_PIN = 12  # GPIO pin for mouth servo

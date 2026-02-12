@@ -29,9 +29,7 @@ from config import (
     FOLLOW_COMMANDS, 
     STOP_COMMANDS,
     RASPBERRY_PI_IP,
-    RASPBERRY_PI_IP,
-    WHEELS_PORT,
-    HANDS_PORT,
+    SERIAL_PORT,
     SERIAL_BAUD,
     MANUAL_SPEED,
     AUTO_SPEED,
@@ -46,7 +44,7 @@ app = Flask(__name__)
 try:
     llm = get_llm()
     mouth = RobotMouth()
-    bot = RobotBridge(wheel_port=WHEELS_PORT, hand_port=HANDS_PORT, baud_rate=SERIAL_BAUD)
+    bot = RobotBridge(port=SERIAL_PORT, baud_rate=SERIAL_BAUD)
     print(f"✅ Complete Control Interface Initialized")
 except Exception as e:
     print(f"⚠️ Warning: Some components failed to initialize: {e}")
