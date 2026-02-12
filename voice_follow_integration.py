@@ -30,10 +30,12 @@ import cv2
 import numpy as np
 import pickle
 from datetime import datetime
+import face_recognition
 from face_recognition_utils import (
     generate_face_encoding,
     save_target_encoding,
-    load_target_encoding
+    load_target_encoding,
+    match_target_person
 )
 
 app = Flask(__name__)
@@ -120,46 +122,81 @@ def generate_frames():
                     # Resize for faster detection
                     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
                     gray_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+                    rgb_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
                     
-                    # Detect faces using Cascade (Faster than HOG/CNN on Pi)
+                    # 1. Detect faces using Cascade (Faster than HOG/CNN on Pi)
                     faces = face_cascade.detectMultiScale(gray_small, 1.1, 4)
                     
                     # Store for drawing
                     scaled_faces = []
                     
                     for (x, y, w, h) in faces:
-                        # Scale up to original size
-                        x *= 4
-                        y *= 4
-                        w *= 4
-                        h *= 4
-                        scaled_faces.append((x, y, w, h))
+                        # Scale up to original size for drawing/driving
+                        x_real = x * 4
+                        y_real = y * 4
+                        w_real = w * 4
+                        h_real = h * 4
+                        scaled_faces.append((x_real, y_real, w_real, h_real))
                         
                         # Tracking Logic
                         if follow_mode_active and bot:
-                            cx = x + w // 2
-                            # Center is 320 for 640x480
-                            error = cx - 320
+                            # 2. MATCHING: Check if this is the target person
+                            is_target = False
+                            color = (0, 0, 255) # Red = Unknown
                             
-                            color = (0, 255, 0) # Green = Tracking
-                            
-                            if abs(error) > DEAD_ZONE:
-                                if error > 0: # Right
-                                    left_mtr, right_mtr = TURN_SPEED_TRACK, -TURN_SPEED_TRACK
-                                else: # Left
-                                    left_mtr, right_mtr = -TURN_SPEED_TRACK, TURN_SPEED_TRACK
+                            if target_person_encodings:
+                                try:
+                                    # Extract face ROI from RGB frame for encoding
+                                    # face_recognition expects (top, right, bottom, left)
+                                    # We use the small frame for speed
+                                    face_encoding = face_recognition.face_encodings(
+                                        rgb_small, 
+                                        [(y, x+w, y+h, x)]
+                                    )[0]
+                                    
+                                    # Match against enrolled person
+                                    is_match, conf, _ = match_target_person(
+                                        face_encoding, 
+                                        target_person_encodings
+                                    )
+                                    
+                                    if is_match:
+                                        is_target = True
+                                        color = (0, 255, 0) # Green = Target
+                                        cv2.putText(frame, f"MATCH ({int(conf*100)}%)", (x_real, y_real-30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                                except Exception as e:
+                                    print(f"Matching error: {e}")
                             else:
-                                if w < 100: # Too far
-                                    left_mtr, right_mtr = AUTO_SPEED, AUTO_SPEED
-                                elif w > 200: # Too close
-                                    left_mtr, right_mtr = -AUTO_SPEED, -AUTO_SPEED
+                                # No target set, tracking ANY face if active (or maybe just track first?)
+                                # Let's default to tracking ANY face if no enrollment, 
+                                # but usually we want specific tracking.
+                                # For now: If no enrollment, we don't track anyone specific, 
+                                # OR we track the first face we see (Safety).
+                                # Let's track green for generic if no enrollment.
+                                is_target = True
+                                color = (0, 255, 0)
+
+                            # 3. DRIVING: Only drive if it is the target (or no target set)
+                            if is_target:
+                                cx = x_real + w_real // 2
+                                error = cx - 320
+                                
+                                if abs(error) > DEAD_ZONE:
+                                    if error > 0: # Right
+                                        left_mtr, right_mtr = TURN_SPEED_TRACK, -TURN_SPEED_TRACK
+                                    else: # Left
+                                        left_mtr, right_mtr = -TURN_SPEED_TRACK, TURN_SPEED_TRACK
                                 else:
-                                    # Perfect distance
-                                    left_mtr, right_mtr = 0, 0
-                            
-                            # Execute drive (only for biggest face/first face)
-                            bot.drive(left_mtr, right_mtr)
-                            break # Only track one face
+                                    if w_real < 100: # Too far
+                                        left_mtr, right_mtr = AUTO_SPEED, AUTO_SPEED
+                                    elif w_real > 200: # Too close
+                                        left_mtr, right_mtr = -AUTO_SPEED, -AUTO_SPEED
+                                    else:
+                                        left_mtr, right_mtr = 0, 0
+                                
+                                # Execute drive
+                                bot.drive(left_mtr, right_mtr)
+                                break # Follow just one target
                         
                     generate_frames.last_faces = scaled_faces
 
@@ -192,17 +229,20 @@ TRAINER_FILE = 'trainer.yml'
 
 # Initialize Trackers
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-recognizer = cv2.face.LBPHFaceRecognizer_create()
-model_trained = False
 
-# Load model if exists
-if os.path.exists(TRAINER_FILE):
-    try:
-        recognizer.read(TRAINER_FILE)
-        model_trained = True
-        print(f"✅ Loaded face model from {TRAINER_FILE}")
-    except:
-        print("⚠️ Could not load trainer.yml")
+# Load target person data
+try:
+    target_person_encodings, target_person_name = load_target_encoding()
+    if target_person_encodings:
+        print(f"✅ Loaded target person: {target_person_name} ({len(target_person_encodings)} views)")
+    else:
+        print("ℹ️ No target person trained yet.")
+        target_person_encodings = {}
+        target_person_name = ""
+except Exception as e:
+    print(f"⚠️ Error loading training data: {e}")
+    target_person_encodings = {}
+    target_person_name = ""
 
 def start_follow_mode():
     """Activate follow mode"""
