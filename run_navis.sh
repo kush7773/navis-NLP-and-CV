@@ -17,7 +17,8 @@ echo -e "${BLUE}🤖 Starting Navis Setup...${NC}"
 # 1. Install Dependencies
 echo -e "\n${BLUE}📦 Checking dependencies...${NC}"
 if ! pip3 show pyopenssl > /dev/null 2>&1; then
-    echo "Installing pyopenssl..."
+    echo "Installing dependencies..."
+    sudo apt-get update && sudo apt-get install -y flac
     pip3 install pyopenssl flask opencv-python face_recognition speechrecognition pydub
 else
     echo -e "${GREEN}✓ Dependencies installed${NC}"

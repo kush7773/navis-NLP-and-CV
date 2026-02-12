@@ -80,41 +80,79 @@ def generate_frames():
         if not success:
             break
             
-        # Add overlay if enabled
-        if show_face_detection:
-            # Skip frames for detection performance (process every 3rd frame)
+        # Add overlay and tracking if enabled
+        if show_face_detection or follow_mode_active:
+             # Skip frames for detection performance (process every 3rd frame)
             if not hasattr(generate_frames, "frame_count"):
                 generate_frames.frame_count = 0
             
             generate_frames.frame_count += 1
             
-            # Draw persistent boxes from last detection
-            if hasattr(generate_frames, "last_faces"):
-                for (top, right, bottom, left) in generate_frames.last_faces:
-                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-
+            # Reset motor values
+            left_mtr, right_mtr = 0, 0
+            
             if generate_frames.frame_count % 3 == 0:
                 try:
                     # Resize for faster detection
                     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-                    rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+                    gray_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
                     
-                    # Detect faces
-                    face_locations = face_recognition.face_locations(rgb_small_frame, model='hog')
+                    # Detect faces using Cascade (Faster than HOG/CNN on Pi)
+                    faces = face_cascade.detectMultiScale(gray_small, 1.1, 4)
                     
-                    # Scale back up
-                    scaled_locations = []
-                    for (top, right, bottom, left) in face_locations:
-                        top *= 4
-                        right *= 4
-                        bottom *= 4
-                        left *= 4
-                        scaled_locations.append((top, right, bottom, left))
+                    # Store for drawing
+                    scaled_faces = []
                     
-                    generate_frames.last_faces = scaled_locations
+                    for (x, y, w, h) in faces:
+                        # Scale up to original size
+                        x *= 4
+                        y *= 4
+                        w *= 4
+                        h *= 4
+                        scaled_faces.append((x, y, w, h))
+                        
+                        # Tracking Logic
+                        if follow_mode_active and bot:
+                            cx = x + w // 2
+                            # Center is 320 for 640x480
+                            error = cx - 320
                             
+                            color = (0, 255, 0) # Green = Tracking
+                            
+                            if abs(error) > DEAD_ZONE:
+                                if error > 0: # Right
+                                    left_mtr, right_mtr = TURN_SPEED_TRACK, -TURN_SPEED_TRACK
+                                else: # Left
+                                    left_mtr, right_mtr = -TURN_SPEED_TRACK, TURN_SPEED_TRACK
+                            else:
+                                if w < 100: # Too far
+                                    left_mtr, right_mtr = AUTO_SPEED, AUTO_SPEED
+                                elif w > 200: # Too close
+                                    left_mtr, right_mtr = -AUTO_SPEED, -AUTO_SPEED
+                                else:
+                                    # Perfect distance
+                                    left_mtr, right_mtr = 0, 0
+                            
+                            # Execute drive (only for biggest face/first face)
+                            bot.drive(left_mtr, right_mtr)
+                            break # Only track one face
+                        
+                    generate_frames.last_faces = scaled_faces
+
                 except Exception as e:
                     print(f"Detection error: {e}")
+            
+            # Draw persistent boxes
+            if hasattr(generate_frames, "last_faces"):
+                for (x, y, w, h) in generate_frames.last_faces:
+                    color = (0, 255, 0) if follow_mode_active else (255, 0, 0)
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+                    if follow_mode_active:
+                         cv2.putText(frame, "TRACKING", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        
+        # Stop if no faces found in tracking mode (safety)
+        if follow_mode_active and bot and generate_frames.frame_count % 3 == 0 and (not hasattr(generate_frames, "last_faces") or len(generate_frames.last_faces) == 0):
+            bot.stop()
 
         # Encode frame
         ret, buffer = cv2.imencode('.jpg', frame)
@@ -122,48 +160,40 @@ def generate_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-# Person-specific tracking
-target_person_encodings = {}  # {"front": encoding, "left": encoding, etc.}
-target_person_name = ""
-match_threshold = 0.6
+# Tracking Configuration
+AUTO_SPEED = 85
+TURN_SPEED_TRACK = 100
+DEAD_ZONE = 60
+TRAINER_FILE = 'trainer.yml'
 
-# Global state for follow mode
-follow_mode_active = False
-navis_hybrid_process = None
+# Initialize Trackers
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+recognizer = cv2.face.LBPHFaceRecognizer_create()
+model_trained = False
+
+# Load model if exists
+if os.path.exists(TRAINER_FILE):
+    try:
+        recognizer.read(TRAINER_FILE)
+        model_trained = True
+        print(f"✅ Loaded face model from {TRAINER_FILE}")
+    except:
+        print("⚠️ Could not load trainer.yml")
 
 def start_follow_mode():
-    """Start the face tracking/follow mode (navis_hybrid.py)"""
-    global navis_hybrid_process, follow_mode_active
-    
-    if navis_hybrid_process is None:
-        try:
-            # Start navis_hybrid.py in background
-            navis_hybrid_process = subprocess.Popen(
-                ['python3', 'navis_hybrid.py'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            follow_mode_active = True
-            print("✅ Follow mode activated - navis_hybrid.py started")
-            return True
-        except Exception as e:
-            print(f"❌ Failed to start follow mode: {e}")
-            return False
-    else:
-        # Already running, just activate tracking
-        follow_mode_active = True
-        print("✅ Follow mode activated - tracking enabled")
-        return True
+    """Activate follow mode"""
+    global follow_mode_active
+    follow_mode_active = True
+    print("✅ Follow mode activated")
+    return True
 
 def stop_follow_mode():
-    """Stop the follow mode"""
-    global navis_hybrid_process, follow_mode_active
-    
+    """Deactivate follow mode"""
+    global follow_mode_active
     follow_mode_active = False
-    
-    # Note: We don't kill navis_hybrid.py, just disable tracking
-    # The web interface at port 5000 stays active for manual control
-    print("⏸️ Follow mode deactivated - tracking disabled")
+    if bot:
+        bot.stop()
+    print("⏸️ Follow mode deactivated")
     return True
 
 def check_follow_command(text):
@@ -647,5 +677,7 @@ if __name__ == '__main__':
             app.run(host='0.0.0.0', port=VOICE_PORT, debug=False, threaded=True)
     finally:
         # Cleanup on exit
-        if navis_hybrid_process:
-            navis_hybrid_process.terminate()
+        if bot:
+            bot.stop()
+        if cap:
+            cap.release()
