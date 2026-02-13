@@ -286,13 +286,25 @@ def generate_frames():
             # 3. Driving Logic (Hybrid with Persistence)
             if follow_mode_active and bot and not manual_mode_active:
                 cmd = "STOP"
-                speed = AUTO_SPEED
+                
+                # Default speeds
+                fwd_speed = AUTO_SPEED
+                turn_speed = TURN_SPEED
                 
                 # Persistence Check
                 time_since_face = time.time() - last_face_seen_time
                 is_locked = (time_since_face < 3.5)  # 3.5 second buffer
                 
                 if is_locked and mp_pos:
+                    # Calculate Dynamic Speed (Proportional Control)
+                    # Target Dist ~22cm. Error = abs(dist - 22)
+                    if mp_dist_cm:
+                        dist_error = abs(mp_dist_cm - 22)
+                        # Kp = 3.0. Min=55, Max=100
+                        p_speed = 55 + (dist_error * 3.0)
+                        fwd_speed = int(np.clip(p_speed, 55, 100))
+                    
+                    # Visual feedback for sticky tracking
                     # Visual feedback for sticky tracking
                     if not is_target_provisional:
                         cv2.putText(frame, f"LOCKED ({3.5-time_since_face:.1f}s)", (50, 50), 
@@ -301,26 +313,27 @@ def generate_frames():
                     # Use MediaPipe for control
                     if mp_depth == 'far':
                          if mp_pos == 'center':
-                             bot.drive(speed, speed)
-                             cmd = "FORWARD"
+                             bot.drive(fwd_speed, fwd_speed)
+                             cmd = f"FORWARD ({fwd_speed})"
                          elif mp_pos == 'left':
-                             bot.drive(int(speed*0.5), speed)
+                             bot.drive(int(fwd_speed*0.5), fwd_speed)
                              cmd = "FWD-LEFT"
                          elif mp_pos == 'right':
-                             bot.drive(speed, int(speed*0.5))
+                             bot.drive(fwd_speed, int(fwd_speed*0.5))
                              cmd = "FWD-RIGHT"
                     elif mp_depth == 'near':
-                         bot.drive(-speed, -speed)
-                         cmd = "BACKWARD"
+                         bot.drive(-fwd_speed, -fwd_speed)
+                         cmd = f"BACKWARD ({fwd_speed})"
                     else: # Medium
                          if mp_pos == 'center':
                              bot.stop()
                              cmd = "STOP (OPTIMAL)"
                          elif mp_pos == 'left':
-                             bot.drive(-speed, speed) # Rotate
+                             bot.drive(-turn_speed, turn_speed) # Rotate
                              cmd = "ROTATE-LEFT" 
                          elif mp_pos == 'right':
-                             bot.drive(speed, -speed) # Rotate
+                             bot.drive(turn_speed, -turn_speed) # Rotate
+                             cmd = "ROTATE-RIGHT"
                              cmd = "ROTATE-RIGHT"
                 else:
                     bot.stop()
