@@ -300,9 +300,9 @@ def generate_frames():
                     # Target Dist ~22cm. Error = abs(dist - 22)
                     if mp_dist_cm:
                         dist_error = abs(mp_dist_cm - 22)
-                        # Forward Proportional: 55 to 85
-                        p_speed = 55 + (dist_error * 2.0)
-                        fwd_speed = int(np.clip(p_speed, 55, 85))
+                        # Forward Proportional: 70 to 90 (Boosted to prevent stall)
+                        p_speed = 70 + (dist_error * 2.5)
+                        fwd_speed = int(np.clip(p_speed, 70, 90))
                         
                         # Backward Speed: Fixed at 55 (User request)
                         back_speed = 55
