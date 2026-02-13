@@ -683,10 +683,10 @@ def upload_person_photo():
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         # Generate face encoding
-        encoding = generate_face_encoding(img)
+        encoding, error = generate_face_encoding(img)
         
-        if encoding is None:
-            return jsonify({'error': 'No face detected in image'}), 400
+        if error:
+            return jsonify({'error': error}), 400
         
         # Store encoding
         target_person_encodings[view_name] = encoding
@@ -723,11 +723,11 @@ def capture_person():
         if not ret:
             return jsonify({'error': 'Failed to capture frame'}), 500
         
-        # Generate encoding
-        encoding = generate_face_encoding(frame)
+        # Generate face encoding
+        encoding, error = generate_face_encoding(frame)
         
-        if encoding is None:
-            return jsonify({'error': 'No face detected in frame'}), 400
+        if error:
+            return jsonify({'error': error}), 400
         
         # Store encoding
         target_person_encodings[view_name] = encoding
