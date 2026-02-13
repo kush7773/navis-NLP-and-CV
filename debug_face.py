@@ -37,43 +37,44 @@ except Exception as e:
     print(f"❌ Error loading pickle: {e}")
     exit()
 
-print("\n📸 Testing Webcam Match...")
+print("📷 Testing Webcam Match (Loop)... Press CTRL+C to stop")
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print("❌ Cannot open webcam")
     exit()
 
-print("Please look at the camera...")
-time.sleep(1)
-
-ret, frame = cap.read()
-cap.release()
-
-if not ret:
-    print("❌ Failed to capture frame")
-    exit()
-
-rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-locs = face_recognition.face_locations(rgb, model='hog')
-print(f"faces found: {len(locs)}")
-
-if len(locs) > 0:
-    encs = face_recognition.face_encodings(rgb, locs)
-    if len(encs) > 0:
-        test_enc = encs[0]
-        # Match
-        for view, target_enc in data['encodings'].items():
-            # Force convert for test
-            if isinstance(target_enc, list) or isinstance(target_enc, tuple):
-                target_enc = np.array(target_enc)
+try:
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("❌ Failed to capture frame")
+            break
             
-            dist = face_recognition.face_distance([target_enc], test_enc)[0]
-            print(f"  - Match vs {view}: Dist={dist:.4f} (Threshold 0.6)")
-            if dist < 0.6:
-                print("    ✅ MATCH!")
-            else:
-                print("    ❌ NO MATCH")
-    else:
-        print("❌ Face detected but no encoding generated")
-else:
-    print("❌ No face detected in live frame (lighting?)")
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        small_frame = cv2.resize(rgb, (0, 0), fx=0.5, fy=0.5) # Speed up
+        
+        locs = face_recognition.face_locations(small_frame, model='hog')
+        print(f"\rFound {len(locs)} faces...", end="")
+        
+        if len(locs) > 0:
+            encs = face_recognition.face_encodings(small_frame, locs)
+            if len(encs) > 0:
+                test_enc = encs[0]
+                # Match
+                for view, target_enc in data['encodings'].items():
+                    # Force convert
+                    if isinstance(target_enc, (list, tuple)):
+                        target_enc = np.array(target_enc)
+                    
+                    dist = face_recognition.face_distance([target_enc], test_enc)[0]
+                    if dist < 0.6:
+                        print(f" ✅ MATCH {view.upper()} (Dist: {dist:.3f})   ", end="")
+                    else:
+                        print(f" ❌ NO MATCH (Dist: {dist:.3f})   ", end="")
+        
+        time.sleep(0.1)
+
+except KeyboardInterrupt:
+    print("\nStopped.")
+
+cap.release()
