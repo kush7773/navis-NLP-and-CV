@@ -29,7 +29,11 @@ def save_target_encoding(encoding, name="Target Person", view="front"):
     if 'encodings' not in data:
         data['encodings'] = {}
     
-    # Add new encoding
+    
+    # Add new encoding (Force numpy array)
+    if isinstance(encoding, (list, tuple)):
+        encoding = np.array(encoding)
+    
     data['encodings'][view] = encoding
     data['name'] = name
     data['timestamp'] = datetime.now().isoformat()
@@ -81,10 +85,15 @@ def load_target_encoding():
                     print(f"✅ Loaded {len(valid_encodings)} valid encodings for: {name}")
                     return valid_encodings, name
                 else:
-                    print("⚠️ No valid encodings found in file.")
+                    print("⚠️ No valid encodings found. Resetting corrupt file.")
+                    if os.path.exists('target_person.pkl'):
+                        os.remove('target_person.pkl')
+                    return {}, None
                     
         except Exception as e:
-            print(f"❌ Error loading encoding: {e}")
+            print(f"❌ Error loading encoding: {e}. Resetting file.")
+            if os.path.exists('target_person.pkl'):
+                os.remove('target_person.pkl')
             return {}, None
     return {}, None
 
