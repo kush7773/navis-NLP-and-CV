@@ -102,19 +102,26 @@ class PoseTracker:
         else:
             shoulder_width_norm = 0.3
         
-        # Reverse: larger width = closer
-        # Map to 0-1 range where 0 = very close, 1 = very far
-        # Adjust range based on typical webcam FOV
+        # Estimate Distance (cm)
+        # K = 16 (derived from 20cm target at 0.8 width)
+        # Avoid division by zero
+        if shoulder_width_norm > 0:
+            est_dist_cm = 16.0 / shoulder_width_norm
+        else:
+            est_dist_cm = 100.0
+            
+        # Reverse: larger width = closer (keep for legacy compatibility if needed, but we use cm now)
         depth_percent = 1.0 - np.clip(shoulder_width_norm, 0, 1)
         
-        if depth_percent < DEPTH_THRESHOLD_NEAR:
-            depth = 'near'
-        elif depth_percent > DEPTH_THRESHOLD_FAR:
-            depth = 'far'
+        # Determine zone based on cm
+        if est_dist_cm < 18:
+            depth = 'near' # Too close (<18cm)
+        elif est_dist_cm > 28:
+            depth = 'far'  # Too far (>28cm)
         else:
-            depth = 'medium'
+            depth = 'medium' # Good (18-28cm)
             
-        return position, depth, depth_percent, results
+        return position, depth, est_dist_cm, results
 
 # Initialize Tracker
 pose_tracker = PoseTracker()
@@ -216,7 +223,7 @@ def generate_frames():
             # 1. MediaPipe Pose Analysis (Always run if tracking to get depth/pos)
             # Resize for speed? PoseTracker can handle it.
             # Convert to RGB for MediaPipe
-            mp_pos, mp_depth, mp_dist_pct, mp_results = pose_tracker.analyze_pose(frame)
+            mp_pos, mp_depth, mp_dist_cm, mp_results = pose_tracker.analyze_pose(frame)
             
             # Draw Pose Landmarks
             if mp_results and mp_results.pose_landmarks:
@@ -227,6 +234,9 @@ def generate_frames():
                     pose_tracker.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=1, circle_radius=1),
                     pose_tracker.mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=1)
                 )
+                if mp_dist_cm:
+                    cv2.putText(frame, f"Dist: {int(mp_dist_cm)}cm", (10, 470), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
             # 2. Face Detection (Identity Check)
             # Only run every 3rd frame to save CPU
