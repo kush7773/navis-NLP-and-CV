@@ -58,7 +58,7 @@ def load_target_encoding():
                 def process_encoding(enc):
                     if isinstance(enc, np.ndarray) and enc.shape == (128,):
                         return enc
-                    elif isinstance(enc, list) and len(enc) == 128:
+                    elif (isinstance(enc, list) or isinstance(enc, tuple)) and len(enc) == 128:
                         return np.array(enc)
                     return None
                 
