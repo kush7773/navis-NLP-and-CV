@@ -42,9 +42,11 @@ import mediapipe as mp
 # Configuration
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
-DEPTH_THRESHOLD_NEAR = 0.3    # Person closer than 30% frame height
-DEPTH_THRESHOLD_FAR = 0.5     # Person farther than 50% frame height (Adjusted for Pi)
-CENTER_TOLERANCE = 0.15       # 15% tolerance for center detection
+# Distance Calibration (Approximate)
+# 0.2 depth_percent ~= 20cm (Shoulders fill ~80% of screen)
+DEPTH_THRESHOLD_NEAR = 0.15    # Move back if closer than this
+DEPTH_THRESHOLD_FAR = 0.25     # Move forward if farther than this
+CENTER_TOLERANCE = 0.15        # 15% tolerance for center detection
 
 # --- MediaPipe Pose Tracker ---
 class PoseTracker:
