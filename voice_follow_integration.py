@@ -617,6 +617,12 @@ def manual_control():
     if not bot:
         return jsonify({'error': 'Robot not connected'}), 500
     
+    # MANUAL OVERRIDE: Any manual command disables follow mode
+    global follow_mode_active
+    if follow_mode_active:
+        follow_mode_active = False
+        print("⚠️ Manual Override: Follow Mode Deactivated")
+    
     try:
         # Map commands to motor speeds
         if command == 'F':  # Forward
