@@ -300,15 +300,19 @@ def generate_frames():
                     # Target Dist ~22cm. Error = abs(dist - 22)
                     if mp_dist_cm:
                         dist_error = abs(mp_dist_cm - 22)
-                        # Forward Proportional: 85 to 100 (Matches Manual Speed)
-                        p_speed = 85 + (dist_error * 1.5)
-                        fwd_speed = int(np.clip(p_speed, 85, 100))
+                        # Forward Proportional: 80 to 85 (User Specified)
+                        p_speed = 80 + (dist_error * 1.0)
+                        fwd_speed = int(np.clip(p_speed, 80, 85))
                         
-                        # Backward Speed: 85 (Matches Manual Logic)
-                        back_speed = 85
+                        # Backward Proportional: 55 to 65 (User Specified)
+                        # Closer we are, faster we back up? Or standard P?
+                        # dist_error is high when very close (<18). 
+                        # Let's map error 0-10 -> speed 55-65
+                        p_back = 55 + (dist_error * 1.0)
+                        back_speed = int(np.clip(p_back, 55, 65))
                     else:
-                        fwd_speed = 100
-                        back_speed = 85
+                        fwd_speed = 85
+                        back_speed = 60
                     
                     # Visual feedback for sticky tracking
                     # Visual feedback for sticky tracking
