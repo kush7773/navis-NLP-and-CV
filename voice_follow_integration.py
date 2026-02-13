@@ -300,9 +300,15 @@ def generate_frames():
                     # Target Dist ~22cm. Error = abs(dist - 22)
                     if mp_dist_cm:
                         dist_error = abs(mp_dist_cm - 22)
-                        # Kp = 3.0. Min=55, Max=100
-                        p_speed = 55 + (dist_error * 3.0)
-                        fwd_speed = int(np.clip(p_speed, 55, 100))
+                        # Forward Proportional: 55 to 85
+                        p_speed = 55 + (dist_error * 2.0)
+                        fwd_speed = int(np.clip(p_speed, 55, 85))
+                        
+                        # Backward Speed: Fixed at 55 (User request)
+                        back_speed = 55
+                    else:
+                        fwd_speed = 85
+                        back_speed = 55
                     
                     # Visual feedback for sticky tracking
                     # Visual feedback for sticky tracking
@@ -322,8 +328,8 @@ def generate_frames():
                              bot.drive(fwd_speed, int(fwd_speed*0.5))
                              cmd = "FWD-RIGHT"
                     elif mp_depth == 'near':
-                         bot.drive(-fwd_speed, -fwd_speed)
-                         cmd = f"BACKWARD ({fwd_speed})"
+                         bot.drive(-back_speed, -back_speed)
+                         cmd = f"BACKWARD ({back_speed})"
                     else: # Medium
                          if mp_pos == 'center':
                              bot.stop()
