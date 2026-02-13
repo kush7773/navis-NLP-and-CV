@@ -340,13 +340,29 @@ def generate_frames():
                          elif mp_pos == 'right':
                              bot.drive(turn_speed, -turn_speed) # Rotate
                              cmd = "ROTATE-RIGHT"
-                             cmd = "ROTATE-RIGHT"
                 else:
-                    bot.stop()
+                    # Not locked or no body found -> Stop
+                    # Only stop if we were moving
+                    if last_driving_command != "STOP":
+                        bot.stop()
                     cmd = "STOP (NO TARGET)"
 
-                if cmd != last_driving_command and frame_count % 10 == 0:
-                    print(f"🚗 Drive: {cmd} (Pos: {mp_pos}, Depth: {mp_depth})")
+                # --- DEBUG LOGGING ---
+                if frame_count % 10 == 0:
+                     status_msg = f"Follow:{follow_mode_active} | Locked:{is_locked} | Dist:{int(mp_dist_cm) if mp_dist_cm else 0}cm | CMD:{cmd}"
+                     print(f"🔍 DEBUG: {status_msg}")
+                     
+                # --- VISUAL STATUS INDICATORS ---
+                # Follow Mode Status
+                status_color = (0, 255, 0) if follow_mode_active else (0, 0, 255)
+                status_text = "FOLLOW: ON" if follow_mode_active else "FOLLOW: OFF"
+                cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, status_color, 2)
+                
+                # Command Status
+                cv2.putText(frame, f"CMD: {cmd}", (10, 430), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+
+                if cmd != last_driving_command:
+                    # print(f"🚗 Drive: {cmd} (Pos: {mp_pos}, Depth: {mp_depth})")
                     last_driving_command = cmd
 
         # Encode frame
