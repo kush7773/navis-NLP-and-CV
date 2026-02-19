@@ -4,7 +4,11 @@
 <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <title>🤖 Navis Control Center</title>
+        <title>NAVIS Control Center | Robomanthan × BNMIT</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+                rel="stylesheet">
         <style>
                 * {
                         margin: 0;
@@ -14,51 +18,102 @@
                 }
 
                 body {
-                        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-                        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                        color: #fff;
+                        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                        background: #0a0a0f;
+                        color: #e0e0e0;
                         overflow-x: hidden;
                         min-height: 100vh;
                 }
 
-                /* Header */
+                /* ============================================
+           HEADER - Professional with Logos
+           ============================================ */
                 .header {
-                        background: rgba(0, 0, 0, 0.5);
-                        backdrop-filter: blur(10px);
-                        padding: 15px 20px;
+                        background: linear-gradient(180deg, rgba(15, 15, 25, 0.98) 0%, rgba(10, 10, 15, 0.95) 100%);
+                        backdrop-filter: blur(20px);
+                        padding: 12px 24px;
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        border-bottom: 2px solid #00d4ff;
-                        box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+                        border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+                        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+                        position: sticky;
+                        top: 0;
+                        z-index: 100;
                 }
 
-                .logo {
-                        font-size: 24px;
-                        font-weight: bold;
-                        background: linear-gradient(135deg, #00d4ff, #00ff88);
+                .header-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 14px;
+                }
+
+                .header-logo {
+                        width: 48px;
+                        height: 48px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        border: 2px solid #FFD700;
+                        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+                }
+
+                .header-title {
+                        display: flex;
+                        flex-direction: column;
+                }
+
+                .header-title h1 {
+                        font-size: 20px;
+                        font-weight: 800;
+                        letter-spacing: 2px;
+                        background: linear-gradient(135deg, #FFD700, #FFA500);
                         -webkit-background-clip: text;
                         -webkit-text-fill-color: transparent;
+                        line-height: 1.2;
+                }
+
+                .header-title .subtitle {
+                        font-size: 10px;
+                        font-weight: 500;
+                        color: rgba(255, 215, 0, 0.6);
+                        letter-spacing: 1.5px;
+                        text-transform: uppercase;
+                }
+
+                .header-right {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                }
+
+                .header-logo-secondary {
+                        width: 42px;
+                        height: 42px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        border: 2px solid #E8731A;
+                        box-shadow: 0 0 10px rgba(232, 115, 26, 0.3);
                 }
 
                 .status-badge {
-                        padding: 8px 16px;
+                        padding: 6px 14px;
                         border-radius: 20px;
-                        font-size: 12px;
-                        font-weight: bold;
-                        border: 2px solid;
+                        font-size: 11px;
+                        font-weight: 700;
+                        border: 1.5px solid;
                         transition: all 0.3s ease;
+                        letter-spacing: 0.5px;
                 }
 
                 .status-badge.active {
-                        background: rgba(0, 255, 136, 0.2);
+                        background: rgba(0, 255, 136, 0.15);
                         border-color: #00ff88;
                         color: #00ff88;
                         animation: glow-green 2s infinite;
                 }
 
                 .status-badge.inactive {
-                        background: rgba(255, 107, 107, 0.2);
+                        background: rgba(255, 107, 107, 0.15);
                         border-color: #ff6b6b;
                         color: #ff6b6b;
                 }
@@ -67,171 +122,306 @@
 
                         0%,
                         100% {
-                                box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+                                box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
                         }
 
                         50% {
-                                box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+                                box-shadow: 0 0 18px rgba(0, 255, 136, 0.7);
                         }
                 }
 
-                /* Main Container */
-                .container {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 15px;
-                        padding: 15px;
+                /* ============================================
+           TAB NAVIGATION
+           ============================================ */
+                .tab-nav {
+                        display: flex;
+                        background: rgba(15, 15, 25, 0.9);
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                        overflow-x: auto;
+                        scrollbar-width: none;
                 }
 
-                @media (max-width: 768px) {
-                        .container {
+                .tab-nav::-webkit-scrollbar {
+                        display: none;
+                }
+
+                .tab-btn {
+                        flex: 1;
+                        min-width: 80px;
+                        padding: 12px 8px;
+                        background: none;
+                        border: none;
+                        color: rgba(255, 255, 255, 0.4);
+                        font-family: 'Inter', sans-serif;
+                        font-size: 11px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        border-bottom: 2px solid transparent;
+                        text-align: center;
+                        letter-spacing: 0.3px;
+                        white-space: nowrap;
+                }
+
+                .tab-btn:hover {
+                        color: rgba(255, 255, 255, 0.7);
+                        background: rgba(255, 255, 255, 0.03);
+                }
+
+                .tab-btn.active {
+                        color: #FFD700;
+                        border-bottom-color: #FFD700;
+                        background: rgba(255, 215, 0, 0.05);
+                }
+
+                .tab-btn .tab-icon {
+                        display: block;
+                        font-size: 18px;
+                        margin-bottom: 4px;
+                }
+
+                /* ============================================
+           TAB CONTENT
+           ============================================ */
+                .tab-content {
+                        display: none;
+                        padding: 16px;
+                        animation: fadeIn 0.3s ease;
+                }
+
+                .tab-content.active {
+                        display: block;
+                }
+
+                @keyframes fadeIn {
+                        from {
+                                opacity: 0;
+                                transform: translateY(8px);
+                        }
+
+                        to {
+                                opacity: 1;
+                                transform: translateY(0);
+                        }
+                }
+
+                /* ============================================
+           PANELS
+           ============================================ */
+                .panel {
+                        background: linear-gradient(135deg, rgba(20, 20, 35, 0.9) 0%, rgba(15, 15, 25, 0.9) 100%);
+                        backdrop-filter: blur(10px);
+                        border-radius: 16px;
+                        padding: 20px;
+                        border: 1px solid rgba(255, 255, 255, 0.06);
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                        margin-bottom: 16px;
+                }
+
+                .panel-title {
+                        font-size: 14px;
+                        font-weight: 700;
+                        margin-bottom: 16px;
+                        color: #FFD700;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                }
+
+                .grid-2 {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 12px;
+                }
+
+                @media (max-width: 480px) {
+                        .grid-2-responsive {
                                 grid-template-columns: 1fr;
                         }
                 }
 
-                /* Panel Styling */
-                .panel {
-                        background: rgba(255, 255, 255, 0.05);
-                        backdrop-filter: blur(10px);
-                        border-radius: 20px;
-                        padding: 20px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                }
-
-                .panel-title {
-                        font-size: 18px;
-                        font-weight: bold;
-                        margin-bottom: 15px;
-                        color: #00d4ff;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                }
-
-                /* Camera Feed */
-                .camera-panel {
-                        grid-row: span 3;
-                }
-
+                /* ============================================
+           CAMERA FEED
+           ============================================ */
                 .camera-feed {
                         width: 100%;
-                        border-radius: 15px;
-                        border: 2px solid #00d4ff;
-                        box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+                        border-radius: 12px;
+                        border: 1px solid rgba(255, 215, 0, 0.2);
+                        box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
                         background: #000;
                 }
 
-                .camera-controls {
-                        display: flex;
-                        gap: 10px;
-                        margin-top: 15px;
-                }
-
-                .camera-btn {
-                        flex: 1;
-                        padding: 12px;
-                        border: 2px solid #00d4ff;
-                        background: rgba(0, 212, 255, 0.1);
-                        color: #00d4ff;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: bold;
-                        transition: all 0.3s ease;
-                }
-
-                .camera-btn:active {
-                        transform: scale(0.95);
-                        background: rgba(0, 212, 255, 0.3);
-                }
-
-                .camera-btn.active {
-                        background: rgba(0, 212, 255, 0.3);
-                        box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-                }
-
-                /* Joystick Controls */
-                .joystick-container {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 15px;
-                }
-
-                .joystick {
-                        display: grid;
-                        grid-template-columns: repeat(3, 80px);
-                        grid-template-rows: repeat(3, 80px);
-                        gap: 10px;
-                        margin: 20px 0;
-                }
-
-                .joystick-btn {
-                        border: 3px solid #00d4ff;
-                        background: rgba(0, 212, 255, 0.1);
-                        border-radius: 15px;
-                        cursor: pointer;
-                        font-size: 28px;
+                .camera-placeholder {
+                        background: #000;
+                        height: 240px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
+                        border-radius: 12px;
+                        color: rgba(255, 255, 255, 0.3);
+                        font-size: 14px;
+                }
+
+                /* ============================================
+           BUTTONS - Universal Styles
+           ============================================ */
+                .btn {
+                        padding: 12px 16px;
+                        border: 1.5px solid;
+                        background: rgba(255, 255, 255, 0.03);
+                        border-radius: 10px;
+                        cursor: pointer;
+                        font-family: 'Inter', sans-serif;
+                        font-weight: 600;
+                        font-size: 13px;
                         transition: all 0.2s ease;
+                        text-align: center;
                         user-select: none;
-                        color: #00d4ff;
-                        font-weight: bold;
                 }
 
-                .joystick-btn:active {
-                        transform: scale(0.9);
-                        background: rgba(0, 212, 255, 0.3);
-                        box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+                .btn:active {
+                        transform: scale(0.95);
                 }
 
-                .joystick-btn.center {
-                        background: rgba(255, 107, 107, 0.2);
-                        border-color: #ff6b6b;
+                .btn-gold {
+                        border-color: rgba(255, 215, 0, 0.4);
+                        color: #FFD700;
+                }
+
+                .btn-gold:active {
+                        background: rgba(255, 215, 0, 0.15);
+                        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+                }
+
+                .btn-green {
+                        border-color: rgba(0, 255, 136, 0.4);
+                        color: #00ff88;
+                }
+
+                .btn-green:active {
+                        background: rgba(0, 255, 136, 0.15);
+                        box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+                }
+
+                .btn-red {
+                        border-color: rgba(255, 107, 107, 0.4);
                         color: #ff6b6b;
-                        font-size: 20px;
+                }
+
+                .btn-red:active {
+                        background: rgba(255, 107, 107, 0.15);
+                        box-shadow: 0 0 15px rgba(255, 107, 107, 0.3);
+                }
+
+                .btn-cyan {
+                        border-color: rgba(0, 212, 255, 0.4);
+                        color: #00d4ff;
+                }
+
+                .btn-cyan:active {
+                        background: rgba(0, 212, 255, 0.15);
+                        box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+                }
+
+                .btn-purple {
+                        border-color: rgba(168, 85, 247, 0.4);
+                        color: #a855f7;
+                }
+
+                .btn-purple:active {
+                        background: rgba(168, 85, 247, 0.15);
+                        box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+                }
+
+                .btn-fill-gold {
+                        border: none;
+                        background: linear-gradient(135deg, #FFD700, #FFA500);
+                        color: #0a0a0f;
+                        font-weight: 700;
+                }
+
+                .btn-fill-gold:active {
+                        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+                }
+
+                /* ============================================
+           JOYSTICK
+           ============================================ */
+                .joystick {
+                        display: grid;
+                        grid-template-columns: repeat(3, 70px);
+                        grid-template-rows: repeat(3, 70px);
+                        gap: 8px;
+                        margin: 16px auto;
+                        justify-content: center;
+                }
+
+                .joy-btn {
+                        border: 2px solid rgba(255, 215, 0, 0.3);
+                        background: rgba(255, 215, 0, 0.05);
+                        border-radius: 14px;
+                        cursor: pointer;
+                        font-size: 24px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.15s ease;
+                        user-select: none;
+                        color: #FFD700;
+                }
+
+                .joy-btn:active {
+                        transform: scale(0.9);
+                        background: rgba(255, 215, 0, 0.2);
+                        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+                }
+
+                .joy-btn.stop {
+                        background: rgba(255, 107, 107, 0.1);
+                        border-color: rgba(255, 107, 107, 0.4);
+                        color: #ff6b6b;
+                        font-size: 12px;
+                        font-weight: 800;
+                        font-family: 'Inter', sans-serif;
                 }
 
                 .emergency-stop {
                         width: 100%;
-                        padding: 20px;
-                        background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+                        padding: 16px;
+                        background: linear-gradient(135deg, #dc2626, #b91c1c);
                         border: none;
-                        border-radius: 15px;
+                        border-radius: 12px;
                         color: white;
-                        font-size: 20px;
-                        font-weight: bold;
+                        font-family: 'Inter', sans-serif;
+                        font-size: 16px;
+                        font-weight: 800;
                         cursor: pointer;
-                        box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
-                        transition: all 0.3s ease;
+                        letter-spacing: 1px;
+                        transition: all 0.2s ease;
                 }
 
                 .emergency-stop:active {
-                        transform: scale(0.95);
-                        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.6);
+                        transform: scale(0.97);
+                        box-shadow: 0 0 30px rgba(220, 38, 38, 0.6);
                 }
 
-                /* Voice Control */
-                .voice-panel {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 15px;
-                }
-
+                /* ============================================
+           VOICE / CHAT
+           ============================================ */
                 .mic-button {
-                        width: 120px;
-                        height: 120px;
+                        width: 100px;
+                        height: 100px;
                         border-radius: 50%;
                         border: none;
-                        background: linear-gradient(135deg, #f093fb, #f5576c);
-                        color: white;
-                        font-size: 48px;
+                        background: linear-gradient(135deg, #FFD700, #FFA500);
+                        color: #0a0a0f;
+                        font-size: 40px;
                         cursor: pointer;
-                        box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);
+                        box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
                         transition: all 0.3s ease;
-                        margin: 0 auto;
+                        margin: 16px auto;
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -242,7 +432,8 @@
                 }
 
                 .mic-button.recording {
-                        background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+                        background: linear-gradient(135deg, #dc2626, #b91c1c);
+                        color: white;
                         animation: pulse 1.5s infinite;
                 }
 
@@ -251,171 +442,235 @@
                         0%,
                         100% {
                                 transform: scale(1);
+                                box-shadow: 0 0 20px rgba(220, 38, 38, 0.4);
                         }
 
                         50% {
-                                transform: scale(1.1);
+                                transform: scale(1.08);
+                                box-shadow: 0 0 35px rgba(220, 38, 38, 0.7);
                         }
                 }
 
                 .status-display {
-                        background: rgba(0, 0, 0, 0.3);
-                        padding: 15px;
-                        border-radius: 10px;
-                        min-height: 100px;
-                        font-size: 14px;
-                        line-height: 1.6;
+                        background: rgba(0, 0, 0, 0.4);
+                        padding: 16px;
+                        border-radius: 12px;
+                        min-height: 80px;
+                        font-size: 13px;
+                        line-height: 1.7;
+                        border: 1px solid rgba(255, 255, 255, 0.04);
                 }
 
                 .text-input-group {
                         display: flex;
-                        gap: 10px;
+                        gap: 8px;
+                        margin-top: 12px;
                 }
 
                 .text-input {
                         flex: 1;
-                        padding: 12px;
-                        border: 2px solid rgba(255, 255, 255, 0.2);
-                        background: rgba(0, 0, 0, 0.3);
+                        padding: 12px 16px;
+                        border: 1.5px solid rgba(255, 255, 255, 0.1);
+                        background: rgba(0, 0, 0, 0.4);
                         border-radius: 10px;
                         color: white;
-                        font-size: 14px;
+                        font-family: 'Inter', sans-serif;
+                        font-size: 13px;
                 }
 
                 .text-input:focus {
                         outline: none;
-                        border-color: #00d4ff;
-                        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+                        border-color: #FFD700;
+                        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
                 }
 
-                .send-btn {
-                        padding: 12px 20px;
-                        border: none;
-                        background: #00d4ff;
-                        color: #1a1a2e;
-                        border-radius: 10px;
-                        font-weight: bold;
-                        cursor: pointer;
-                        transition: all 0.3s ease;
-                }
-
-                .send-btn:active {
-                        transform: scale(0.95);
-                }
-
-                /* Quick Commands */
-                .quick-commands {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
-                }
-
-                .quick-cmd {
-                        padding: 12px;
-                        border: 2px solid;
-                        background: rgba(255, 255, 255, 0.05);
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: bold;
-                        transition: all 0.3s ease;
+                /* ============================================
+           HAND CONTROLS
+           ============================================ */
+                .hand-section-label {
                         text-align: center;
+                        font-weight: 700;
+                        font-size: 12px;
+                        letter-spacing: 1px;
+                        margin-bottom: 8px;
+                        text-transform: uppercase;
                 }
 
-                .quick-cmd.follow {
-                        border-color: #00ff88;
+                .hand-section-label.left {
+                        color: #00d4ff;
+                }
+
+                .hand-section-label.right {
                         color: #00ff88;
                 }
 
-                .quick-cmd.stop {
-                        border-color: #ff6b6b;
+                .slider-group {
+                        margin-bottom: 16px;
+                }
+
+                .slider-label {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-bottom: 8px;
+                        font-size: 12px;
+                        font-weight: 600;
+                }
+
+                .angle-display {
+                        font-weight: 700;
+                        font-size: 14px;
+                        color: #FFD700;
+                }
+
+                .slider {
+                        width: 100%;
+                        height: 6px;
+                        border-radius: 3px;
+                        background: rgba(255, 255, 255, 0.08);
+                        outline: none;
+                        -webkit-appearance: none;
+                }
+
+                .slider::-webkit-slider-thumb {
+                        -webkit-appearance: none;
+                        width: 22px;
+                        height: 22px;
+                        border-radius: 50%;
+                        background: #FFD700;
+                        cursor: pointer;
+                        box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+                }
+
+                /* ============================================
+           TRAINING SECTION
+           ============================================ */
+                .training-status {
+                        padding: 10px 14px;
+                        background: rgba(0, 0, 0, 0.3);
+                        border-radius: 10px;
+                        text-align: center;
+                        font-weight: 700;
+                        font-size: 13px;
+                        border: 1.5px solid;
+                }
+
+                .training-status.enrolled {
+                        color: #00ff88;
+                        border-color: rgba(0, 255, 136, 0.3);
+                }
+
+                .training-status.not-enrolled {
                         color: #ff6b6b;
+                        border-color: rgba(255, 107, 107, 0.3);
                 }
 
-                .quick-cmd:active {
-                        transform: scale(0.95);
-                        background: rgba(255, 255, 255, 0.1);
+                .views-list {
+                        font-size: 11px;
+                        opacity: 0.6;
+                        text-align: center;
+                        margin-top: 6px;
                 }
 
-                /* Person Training Section */
-                .training-section {
+                /* ============================================
+           MODEL TRAINING MODAL
+           ============================================ */
+                .train-form {
                         display: flex;
                         flex-direction: column;
                         gap: 10px;
                 }
 
-                .training-status {
+                .train-form textarea {
+                        width: 100%;
                         padding: 12px;
-                        background: rgba(0, 0, 0, 0.3);
+                        border: 1.5px solid rgba(255, 255, 255, 0.1);
+                        background: rgba(0, 0, 0, 0.4);
                         border-radius: 10px;
-                        text-align: center;
-                        font-weight: bold;
-                        font-size: 14px;
-                }
-
-                .training-status.enrolled {
-                        color: #00ff88;
-                        border: 2px solid #00ff88;
-                }
-
-                .training-status.not-enrolled {
-                        color: #ff6b6b;
-                        border: 2px solid #ff6b6b;
-                }
-
-                .view-buttons {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
-                }
-
-                .train-btn {
-                        padding: 12px;
-                        border: 2px solid #00ff88;
-                        background: rgba(0, 255, 136, 0.1);
-                        color: #00ff88;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: bold;
+                        color: white;
+                        font-family: 'Inter', sans-serif;
                         font-size: 13px;
-                        transition: all 0.3s ease;
+                        resize: vertical;
+                        min-height: 50px;
                 }
 
-                .train-btn:active {
-                        transform: scale(0.95);
-                        background: rgba(0, 255, 136, 0.2);
+                .train-form textarea:focus {
+                        outline: none;
+                        border-color: #a855f7;
+                        box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
                 }
 
-                .clear-btn {
-                        padding: 10px;
-                        border: 2px solid #ff6b6b;
-                        background: rgba(255, 107, 107, 0.1);
+                .training-pair {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        padding: 10px 12px;
+                        background: rgba(0, 0, 0, 0.3);
+                        border-radius: 8px;
+                        margin-bottom: 6px;
+                        border: 1px solid rgba(255, 255, 255, 0.04);
+                        font-size: 12px;
+                }
+
+                .training-pair .pair-content {
+                        flex: 1;
+                        margin-right: 10px;
+                }
+
+                .training-pair .pair-q {
+                        color: #FFD700;
+                        font-weight: 600;
+                        margin-bottom: 3px;
+                }
+
+                .training-pair .pair-a {
+                        color: rgba(255, 255, 255, 0.6);
+                }
+
+                .training-pair .delete-pair {
+                        background: none;
+                        border: none;
                         color: #ff6b6b;
-                        border-radius: 10px;
                         cursor: pointer;
-                        font-size: 12px;
-                        transition: all 0.3s ease;
+                        font-size: 16px;
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        transition: background 0.2s;
                 }
 
-                .clear-btn:active {
-                        transform: scale(0.95);
-                        background: rgba(255, 107, 107, 0.2);
+                .training-pair .delete-pair:hover {
+                        background: rgba(255, 107, 107, 0.15);
                 }
 
-                .views-list {
-                        font-size: 12px;
-                        opacity: 0.8;
-                        text-align: center;
-                        margin-top: 5px;
+                .training-list {
+                        max-height: 300px;
+                        overflow-y: auto;
+                        margin-top: 12px;
                 }
 
+                .training-list::-webkit-scrollbar {
+                        width: 4px;
+                }
+
+                .training-list::-webkit-scrollbar-track {
+                        background: rgba(255, 255, 255, 0.02);
+                }
+
+                .training-list::-webkit-scrollbar-thumb {
+                        background: rgba(255, 255, 255, 0.1);
+                        border-radius: 2px;
+                }
+
+                /* ============================================
+           SPINNER & UTILITY
+           ============================================ */
                 .spinner {
                         display: inline-block;
-                        width: 16px;
-                        height: 16px;
-                        border: 3px solid rgba(255, 255, 255, 0.3);
-                        border-top-color: white;
+                        width: 14px;
+                        height: 14px;
+                        border: 2px solid rgba(255, 255, 255, 0.2);
+                        border-top-color: #FFD700;
                         border-radius: 50%;
-                        animation: spin 1s linear infinite;
+                        animation: spin 0.8s linear infinite;
                 }
 
                 @keyframes spin {
@@ -427,467 +682,756 @@
                 input[type="file"] {
                         display: none;
                 }
+
+                .text-center {
+                        text-align: center;
+                }
+
+                .mt-8 {
+                        margin-top: 8px;
+                }
+
+                .mt-12 {
+                        margin-top: 12px;
+                }
+
+                .quick-commands {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 8px;
+                        margin-bottom: 12px;
+                }
+
+                /* Mobile responsive */
+                @media (max-width: 480px) {
+                        .header {
+                                padding: 10px 16px;
+                        }
+
+                        .header-logo {
+                                width: 36px;
+                                height: 36px;
+                        }
+
+                        .header-logo-secondary {
+                                width: 32px;
+                                height: 32px;
+                        }
+
+                        .header-title h1 {
+                                font-size: 16px;
+                        }
+
+                        .tab-btn {
+                                font-size: 10px;
+                                padding: 10px 6px;
+                        }
+
+                        .tab-btn .tab-icon {
+                                font-size: 16px;
+                        }
+
+                        .joystick {
+                                grid-template-columns: repeat(3, 60px);
+                                grid-template-rows: repeat(3, 60px);
+                        }
+                }
         </style>
 </head>
 
 <body>
+        <!-- HEADER -->
         <div class="header">
-                <div class="logo">🤖 NAVIS CONTROL CENTER</div>
-                <div class="status-badge inactive" id="followStatus">⏸️ MANUAL</div>
+                <div class="header-left">
+                        <img src="/static/robomanthan_logo.png" alt="Robomanthan" class="header-logo"
+                                onerror="this.style.display='none'">
+                        <div class="header-title">
+                                <h1>NAVIS</h1>
+                                <span class="subtitle">Robomanthan × BNMIT</span>
+                        </div>
+                </div>
+                <div class="header-right">
+                        <div class="status-badge inactive" id="followStatus">⏸️ MANUAL</div>
+                        <img src="/static/bnmit_logo.png" alt="BNMIT" class="header-logo-secondary"
+                                onerror="this.style.display='none'">
+                </div>
         </div>
 
-        <div class="container">
-                <!-- Camera Panel -->
-                <div class="panel camera-panel">
+        <!-- TAB NAVIGATION -->
+        <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('control')">
+                        <span class="tab-icon">🕹️</span>Control
+                </button>
+                <button class="tab-btn" onclick="switchTab('camera')">
+                        <span class="tab-icon">📹</span>Camera
+                </button>
+                <button class="tab-btn" onclick="switchTab('voice')">
+                        <span class="tab-icon">🎤</span>Voice
+                </button>
+                <button class="tab-btn" onclick="switchTab('hands')">
+                        <span class="tab-icon">🖐️</span>Hands
+                </button>
+                <button class="tab-btn" onclick="switchTab('training')">
+                        <span class="tab-icon">🧠</span>Train
+                </button>
+        </div>
+
+        <!-- ============================================
+         TAB 1: CONTROL (Joystick + Quick Commands)
+         ============================================ -->
+        <div class="tab-content active" id="tab-control">
+                <div class="panel">
+                        <div class="panel-title">🕹️ Movement Control</div>
+                        <div class="joystick">
+                                <div></div>
+                                <div class="joy-btn" onmousedown="startMoving('F')" onmouseup="stopMoving()"
+                                        ontouchstart="startMoving('F')" ontouchend="stopMoving()"
+                                        onmouseleave="stopMoving()">↑</div>
+                                <div></div>
+                                <div class="joy-btn" onmousedown="startMoving('L')" onmouseup="stopMoving()"
+                                        ontouchstart="startMoving('L')" ontouchend="stopMoving()"
+                                        onmouseleave="stopMoving()">←</div>
+                                <div class="joy-btn stop" onclick="stopMoving()">STOP</div>
+                                <div class="joy-btn" onmousedown="startMoving('R')" onmouseup="stopMoving()"
+                                        ontouchstart="startMoving('R')" ontouchend="stopMoving()"
+                                        onmouseleave="stopMoving()">→</div>
+                                <div></div>
+                                <div class="joy-btn" onmousedown="startMoving('B')" onmouseup="stopMoving()"
+                                        ontouchstart="startMoving('B')" ontouchend="stopMoving()"
+                                        onmouseleave="stopMoving()">↓</div>
+                                <div></div>
+                        </div>
+                        <button class="emergency-stop" onclick="emergencyStop()">🛑 EMERGENCY STOP</button>
+                </div>
+
+                <div class="panel">
+                        <div class="panel-title">⚡ Quick Commands</div>
+                        <div class="quick-commands">
+                                <button class="btn btn-green" onclick="quickCommand('follow me navis')">🎯 Follow
+                                        Me</button>
+                                <button class="btn btn-red" onclick="quickCommand('stop navis')">⏹️ Stop</button>
+                        </div>
+                        <div class="status-display" id="controlStatus">
+                                <strong>Ready</strong>
+                                <p style="opacity: 0.5; margin-top: 6px; font-size: 12px;">
+                                        Use joystick to move • Quick commands for follow mode
+                                </p>
+                        </div>
+                </div>
+        </div>
+
+        <!-- ============================================
+         TAB 2: CAMERA (Feed + Person Training)
+         ============================================ -->
+        <div class="tab-content" id="tab-camera">
+                <div class="panel">
                         <div class="panel-title">📹 Live Camera Feed</div>
                         {% if camera_available %}
                         <img src="{{ url_for('video_feed') }}" class="camera-feed" alt="Camera Feed">
-                        <div class="camera-controls">
-                                <button class="camera-btn" id="faceDetectBtn" onclick="toggleFaceDetection()">
+                        <div class="grid-2 mt-12">
+                                <button class="btn btn-gold" id="faceDetectBtn" onclick="toggleFaceDetection()">
                                         👤 Face Detection
                                 </button>
                         </div>
                         {% else %}
-                        <div
-                                style="background: #000; height: 300px; display: flex; align-items: center; justify-content: center; border-radius: 15px;">
-                                <p>📹 Camera Not Available</p>
-                        </div>
+                        <div class="camera-placeholder">📹 Camera Not Available</div>
                         {% endif %}
                 </div>
 
-                <!-- Joystick Panel -->
                 <div class="panel">
-                        <div class="panel-title">🕹️ Joystick Control</div>
-                        <div class="joystick-container">
-                                <div class="joystick">
-                                        <div></div>
-                                        <div class="joystick-btn" onmousedown="startMoving('F')"
-                                                onmouseup="stopMoving()" ontouchstart="startMoving('F')"
-                                                ontouchend="stopMoving()" onmouseleave="stopMoving()">↑</div>
-                                        <div></div>
+                        <div class="panel-title">👤 Person Training</div>
+                        <div class="training-status not-enrolled" id="trainingStatus">⚠️ No person enrolled</div>
+                        <div class="views-list" id="viewsList"></div>
 
-                                        <div class="joystick-btn" onmousedown="startMoving('L')"
-                                                onmouseup="stopMoving()" ontouchstart="startMoving('L')"
-                                                ontouchend="stopMoving()" onmouseleave="stopMoving()">←</div>
-                                        <div class="joystick-btn center" onclick="stopMoving()">STOP</div>
-                                        <div class="joystick-btn" onmousedown="startMoving('R')"
-                                                onmouseup="stopMoving()" ontouchstart="startMoving('R')"
-                                                ontouchend="stopMoving()" onmouseleave="stopMoving()">→</div>
+                        <div class="grid-2 mt-12">
+                                <button class="btn btn-green" onclick="captureView('front')">📸 Front View</button>
+                                <button class="btn btn-green" onclick="captureView('back')">📸 Back View</button>
+                        </div>
 
-                                        <div></div>
-                                        <div class="joystick-btn" onmousedown="startMoving('B')"
-                                                onmouseup="stopMoving()" ontouchstart="startMoving('B')"
-                                                ontouchend="stopMoving()" onmouseleave="stopMoving()">↓</div>
-                                        <div></div>
-                                </div>
+                        <input type="file" id="photoUploadFront" accept="image/*" onchange="uploadPhoto('front')">
+                        <input type="file" id="photoUploadBack" accept="image/*" onchange="uploadPhoto('back')">
 
-                                <button class="emergency-stop" onclick="emergencyStop()">
-                                        🛑 EMERGENCY STOP
+                        <div class="grid-2 mt-8">
+                                <button class="btn btn-cyan"
+                                        onclick="document.getElementById('photoUploadFront').click()">
+                                        📁 Upload Front
                                 </button>
+                                <button class="btn btn-cyan"
+                                        onclick="document.getElementById('photoUploadBack').click()">
+                                        📁 Upload Back
+                                </button>
+                        </div>
+
+                        <button class="btn btn-red mt-12" style="width:100%" onclick="clearPerson()">🗑️ Clear
+                                Training</button>
+                </div>
+        </div>
+
+        <!-- ============================================
+         TAB 3: VOICE & CHAT
+         ============================================ -->
+        <div class="tab-content" id="tab-voice">
+                <div class="panel">
+                        <div class="panel-title">🎤 Voice Control</div>
+                        <div class="text-center">
+                                <button class="mic-button" id="micBtn">🎤</button>
+                                <p style="font-size: 11px; opacity: 0.4; margin-top: 8px;">Hold to speak</p>
                         </div>
                 </div>
 
-                <!-- Voice Control Panel -->
-                <div class="panel voice-panel">
-                        <div class="panel-title">🎤 Voice Control</div>
-
-                        <button class="mic-button" id="micBtn">
-                                🎤
-                        </button>
-
-                        <div class="quick-commands">
-                                <button class="quick-cmd follow" onclick="quickCommand('follow me navis')">
-                                        🎯 Follow Me
-                                </button>
-                                <button class="quick-cmd stop" onclick="quickCommand('stop navis')">
-                                        ⏹️ Stop
-                                </button>
-                        </div>
-
+                <div class="panel">
+                        <div class="panel-title">💬 Chat</div>
                         <div class="status-display" id="statusDisplay">
                                 <strong>Ready to listen...</strong>
-                                <p style="opacity: 0.7; margin-top: 10px;">
+                                <p style="opacity: 0.5; margin-top: 8px; font-size: 12px;">
                                         🎤 Hold mic button to speak<br>
-                                        🕹️ Use joystick for manual control<br>
-                                        🎯 Say "Follow me Navis" to activate tracking
+                                        💬 Or type a message below
                                 </p>
                         </div>
-
                         <div class="text-input-group">
                                 <input type="text" class="text-input" id="textInput"
                                         placeholder="Type command or question...">
-                                <button class="send-btn" onclick="sendText()">Send</button>
-                        </div>
-                </div>
-
-                <!-- Person Training Panel -->
-                <div class="panel">
-                        <div class="panel-title">👤 Person Training</div>
-
-                        <div class="training-section">
-                                <div class="training-status not-enrolled" id="trainingStatus">
-                                        ⚠️ No person enrolled
-                                </div>
-                                <div class="views-list" id="viewsList"></div>
-
-                                <div class="view-buttons">
-                                        <button class="train-btn" onclick="captureView('front')">
-                                                📸 Front View
-                                        </button>
-                                        <button class="train-btn" onclick="captureView('back')">
-                                                📸 Back View
-                                        </button>
-                                </div>
-
-                                <input type="file" id="photoUploadFront" accept="image/*"
-                                        onchange="uploadPhoto('front')">
-                                <input type="file" id="photoUploadBack" accept="image/*" onchange="uploadPhoto('back')">
-
-                                <div class="view-buttons">
-                                        <button class="train-btn"
-                                                onclick="document.getElementById('photoUploadFront').click()">
-                                                📁 Upload Front
-                                        </button>
-                                        <button class="train-btn"
-                                                onclick="document.getElementById('photoUploadBack').click()">
-                                                📁 Upload Back
-                                        </button>
-                                </div>
-
-                                <button class="clear-btn" onclick="clearPerson()">
-                                        🗑️ Clear Training
-                                </button>
+                                <button class="btn btn-fill-gold" onclick="sendText()">Send</button>
                         </div>
                 </div>
         </div>
 
+        <!-- ============================================
+         TAB 4: HAND & ARM CONTROLS
+         ============================================ -->
+        <div class="tab-content" id="tab-hands">
+                <div class="panel">
+                        <div class="panel-title">🖐️ Hand Control</div>
+                        <div class="grid-2">
+                                <div>
+                                        <div class="hand-section-label left">LEFT HAND</div>
+                                        <div style="display:flex;flex-direction:column;gap:8px">
+                                                <button class="btn btn-cyan" onclick="controlHand('LC')">👐
+                                                        Open</button>
+                                                <button class="btn btn-cyan" onclick="controlHand('LO')">✊
+                                                        Close</button>
+                                        </div>
+                                </div>
+                                <div>
+                                        <div class="hand-section-label right">RIGHT HAND</div>
+                                        <div style="display:flex;flex-direction:column;gap:8px">
+                                                <button class="btn btn-green" onclick="controlHand('RC')">👐
+                                                        Open</button>
+                                                <button class="btn btn-green" onclick="controlHand('RO')">✊
+                                                        Close</button>
+                                        </div>
+                                </div>
+                        </div>
+                </div>
+
+                <div class="panel">
+                        <div class="panel-title">🔄 Wrist Control</div>
+                        <div class="slider-group">
+                                <div class="slider-label">
+                                        <span style="color:#00d4ff">LEFT WRIST</span>
+                                        <span class="angle-display" id="leftAngle">90°</span>
+                                </div>
+                                <input type="range" min="0" max="180" value="90" class="slider" id="leftWrist"
+                                        oninput="updateWrist('L', this.value)">
+                        </div>
+                        <div class="slider-group">
+                                <div class="slider-label">
+                                        <span style="color:#00ff88">RIGHT WRIST</span>
+                                        <span class="angle-display" id="rightAngle">90°</span>
+                                </div>
+                                <input type="range" min="0" max="180" value="90" class="slider" id="rightWrist"
+                                        oninput="updateWrist('R', this.value)">
+                        </div>
+                </div>
+
+                <div class="panel">
+                        <div class="panel-title">💪 Bicep Control</div>
+                        <div class="grid-2">
+                                <div>
+                                        <div class="hand-section-label left">LEFT BICEP</div>
+                                        <div style="display:flex;flex-direction:column;gap:8px">
+                                                <button class="btn btn-cyan" onclick="controlBicep('BLU')">⬆️
+                                                        Up</button>
+                                                <button class="btn btn-cyan" onclick="controlBicep('BLD')">⬇️
+                                                        Down</button>
+                                        </div>
+                                </div>
+                                <div>
+                                        <div class="hand-section-label right">RIGHT BICEP</div>
+                                        <div style="display:flex;flex-direction:column;gap:8px">
+                                                <button class="btn btn-green" onclick="controlBicep('BRU')">⬆️
+                                                        Up</button>
+                                                <button class="btn btn-green" onclick="controlBicep('BRD')">⬇️
+                                                        Down</button>
+                                        </div>
+                                </div>
+                        </div>
+                        <button class="emergency-stop mt-12" onclick="controlBicep('BS')">🛑 STOP BICEPS</button>
+                </div>
+
+                <div class="panel">
+                        <div class="status-display" id="handStatus">
+                                <strong>Ready to control hands & arms</strong>
+                        </div>
+                </div>
+        </div>
+
+        <!-- ============================================
+         TAB 5: MODEL TRAINING
+         ============================================ -->
+        <div class="tab-content" id="tab-training">
+                <div class="panel">
+                        <div class="panel-title">🧠 AI Model Training</div>
+                        <p style="font-size: 12px; opacity: 0.5; margin-bottom: 14px;">
+                                Train NAVIS to answer questions about specific topics. Add question-answer pairs below.
+                        </p>
+
+                        <div class="train-form">
+                                <textarea id="trainQuestion"
+                                        placeholder="Question (e.g., Who is the CEO of Robomanthan?)"
+                                        rows="2"></textarea>
+                                <textarea id="trainAnswer"
+                                        placeholder="Answer (e.g., The CEO of Robomanthan is Mr. Saurav Kumar)"
+                                        rows="2"></textarea>
+                                <button class="btn btn-fill-gold" onclick="addTrainingPair()">🧠 Train Model</button>
+                        </div>
+                </div>
+
+                <div class="panel">
+                        <div class="panel-title">📚 Knowledge Base</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                <span style="font-size:12px;opacity:0.5" id="pairCount">Loading...</span>
+                                <button class="btn btn-gold" style="padding:6px 12px;font-size:11px"
+                                        onclick="reloadTraining()">🔄 Reload</button>
+                        </div>
+                        <div class="training-list" id="trainingList">
+                                <div class="text-center" style="padding:20px;opacity:0.3">Loading training data...</div>
+                        </div>
+                </div>
+        </div>
+
+        <!-- ============================================
+         JAVASCRIPT
+         ============================================ -->
         <script>
-                let mediaRecorder;
-                let audioChunks = [];
-                const micBtn = document.getElementById('micBtn');
-                const statusDisplay = document.getElementById('statusDisplay');
-                const followStatus = document.getElementById('followStatus');
-                const faceDetectBtn = document.getElementById('faceDetectBtn');
+        let mediaRecorder;
+        let audioChunks = [];
+        const micBtn = document.getElementById('micBtn');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const followStatus = document.getElementById('followStatus');
 
-                // ============================================
-                //   CONTINUOUS MOVEMENT LOGIC
-                // ============================================
-                let moveInterval = null;
+        // ============================================
+        //   TAB SWITCHING
+        // ============================================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
 
-                function startMoving(cmd) {
-                        if (event && event.type === 'touchstart') {
-                                event.preventDefault();
-                        }
+            // Load training data when visiting train tab
+            if (tabName === 'training') loadTrainingData();
+        }
 
-                        sendCommand(cmd);  // Send immediately
+        // ============================================
+        //   CONTINUOUS MOVEMENT
+        // ============================================
+        let moveInterval = null;
 
-                        if (moveInterval) clearInterval(moveInterval);
+        function startMoving(cmd) {
+            if (event && event.type === 'touchstart') event.preventDefault();
+            sendCommand(cmd);
+            if (moveInterval) clearInterval(moveInterval);
+            moveInterval = setInterval(() => sendCommand(cmd), 100);
+        }
 
-                        // Repeat every 100ms for continuous movement
-                        moveInterval = setInterval(() => {
-                                sendCommand(cmd);
-                        }, 100);
-                }
+        function stopMoving() {
+            if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+            sendCommand('S');
+        }
 
-                function stopMoving() {
-                        if (moveInterval) {
-                                clearInterval(moveInterval);
-                                moveInterval = null;
-                        }
-                        sendCommand('S');
-                }
-
-                // ============================================
-                //   MICROPHONE INITIALIZATION
-                // ============================================
-                async function initMicrophone() {
-                        try {
-                                const stream = await navigator.mediaDevices.getUserMedia({
-                                        audio: {
-                                                echoCancellation: true,
-                                                noiseSuppression: true,
-                                                autoGainControl: true
-                                        }
-                                });
-
-                                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-
-                                mediaRecorder.ondataavailable = (event) => {
-                                        if (event.data.size > 0) audioChunks.push(event.data);
-                                };
-
-                                mediaRecorder.onstop = async () => {
-                                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                                        audioChunks = [];
-                                        await sendAudio(audioBlob);
-                                };
-                        } catch (error) {
-                                console.error('Microphone error:', error);
-                                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Microphone access denied</div>';
-                        }
-                }
-
-                // Voice recording
-                micBtn.addEventListener('mousedown', startRecording);
-                micBtn.addEventListener('touchstart', startRecording);
-                micBtn.addEventListener('mouseup', stopRecording);
-                micBtn.addEventListener('touchend', stopRecording);
-
-                function startRecording(e) {
-                        e.preventDefault();
-                        if (mediaRecorder && mediaRecorder.state === 'inactive') {
-                                audioChunks = [];
-                                mediaRecorder.start();
-                                micBtn.classList.add('recording');
-                                statusDisplay.innerHTML = '<strong>🎤 Listening...</strong>';
-                        }
-                }
-
-                function stopRecording(e) {
-                        e.preventDefault();
-                        if (mediaRecorder && mediaRecorder.state === 'recording') {
-                                mediaRecorder.stop();
-                                micBtn.classList.remove('recording');
-                        }
-                }
-
-                // ============================================
-                //   AUDIO/TEXT COMMUNICATION
-                // ============================================
-                async function sendAudio(audioBlob) {
-                        const formData = new FormData();
-                        formData.append('audio', audioBlob, 'recording.webm');
-
-                        statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
-
-                        try {
-                                const response = await fetch('/audio_upload', { method: 'POST', body: formData });
-                                const result = await response.json();
-
-                                if (result.error) {
-                                        statusDisplay.innerHTML = `<div style="color: #ff6b6b;">❌ ${result.error}</div>`;
-                                } else {
-                                        statusDisplay.innerHTML = `
-                        <p><strong>👤 You:</strong> ${result.transcription}</p>
-                        <p><strong>🤖 Navis:</strong> ${result.response}</p>
-                    `;
-                                        updateFollowStatus(result.follow_active);
-                                }
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Network error</div>';
-                        }
-                }
-
-                async function sendCommand(cmd) {
-                        try {
-                                fetch('/manual_control', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ command: cmd })
-                                }).catch(err => console.error(err));
-                        } catch (error) {
-                                console.error('Command error:', error);
-                        }
-                }
-
-                function emergencyStop() {
-                        stopMoving();
-                        sendCommand('S');
-                        statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">🛑 EMERGENCY STOP ACTIVATED</strong>';
-                }
-
-                async function quickCommand(text) {
-                        statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
-
-                        try {
-                                const response = await fetch('/text_chat', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ message: text })
-                                });
-
-                                const result = await response.json();
-                                statusDisplay.innerHTML = `<p><strong>🤖 Navis:</strong> ${result.response}</p>`;
-                                updateFollowStatus(result.follow_active);
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Error</div>';
-                        }
-                }
-
-                async function sendText() {
-                        const input = document.getElementById('textInput');
-                        const text = input.value.trim();
-                        if (!text) return;
-
-                        statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
-
-                        try {
-                                const response = await fetch('/text_chat', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ message: text })
-                                });
-
-                                const result = await response.json();
-                                statusDisplay.innerHTML = `
-                    <p><strong>👤 You:</strong> ${text}</p>
-                    <p><strong>🤖 Navis:</strong> ${result.response}</p>
-                `;
-                                updateFollowStatus(result.follow_active);
-                                input.value = '';
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<div style="color: #ff6b6b;">❌ Error</div>';
-                        }
-                }
-
-                document.getElementById('textInput').addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') sendText();
+        // ============================================
+        //   MICROPHONE
+        // ============================================
+        async function initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
                 });
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioChunks = [];
+                    await sendAudio(audioBlob);
+                };
+            } catch (error) {
+                console.error('Mic error:', error);
+                statusDisplay.innerHTML = '<div style="color:#ff6b6b">❌ Microphone access denied</div>';
+            }
+        }
 
-                // ============================================
-                //   PERSON TRAINING
-                // ============================================
-                async function captureView(view) {
-                        statusDisplay.innerHTML = `<div class="spinner"></div> <strong>Capturing ${view} view...</strong>`;
+        micBtn.addEventListener('mousedown', startRecording);
+        micBtn.addEventListener('touchstart', startRecording);
+        micBtn.addEventListener('mouseup', stopRecording);
+        micBtn.addEventListener('touchend', stopRecording);
 
-                        try {
-                                const response = await fetch('/capture_person', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ view: view })
-                                });
+        function startRecording(e) {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state === 'inactive') {
+                audioChunks = [];
+                mediaRecorder.start();
+                micBtn.classList.add('recording');
+                statusDisplay.innerHTML = '<strong>🎤 Listening...</strong>';
+            }
+        }
 
-                                const result = await response.json();
+        function stopRecording(e) {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                micBtn.classList.remove('recording');
+            }
+        }
 
-                                if (result.success) {
-                                        statusDisplay.innerHTML = `<strong style="color: #00ff88;">✅ ${result.message}</strong>`;
-                                        updatePersonStatus();
-                                } else {
-                                        statusDisplay.innerHTML = `<strong style="color: #ff6b6b;">❌ ${result.error}</strong>`;
-                                }
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">❌ Capture failed</strong>';
-                        }
+        // ============================================
+        //   API CALLS
+        // ============================================
+        async function sendAudio(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+            statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
+
+            try {
+                const response = await fetch('/audio_upload', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (result.error) {
+                    statusDisplay.innerHTML = `<div style="color:#ff6b6b">❌ ${result.error}</div>`;
+                } else {
+                    statusDisplay.innerHTML = `
+                        <p><strong style="color:#FFD700">👤 You:</strong> ${result.transcription}</p>
+                        <p><strong style="color:#00ff88">🤖 Navis:</strong> ${result.response}</p>`;
+                    updateFollowStatus(result.follow_active);
                 }
+            } catch (error) {
+                statusDisplay.innerHTML = '<div style="color:#ff6b6b">❌ Network error</div>';
+            }
+        }
 
-                async function uploadPhoto(view) {
-                        const fileInput = view === 'front' ? document.getElementById('photoUploadFront') : document.getElementById('photoUploadBack');
-                        const file = fileInput.files[0];
-                        if (!file) return;
+        async function sendCommand(cmd) {
+            try {
+                fetch('/manual_control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: cmd })
+                }).catch(err => console.error(err));
+            } catch (error) { console.error(error); }
+        }
 
-                        const formData = new FormData();
-                        formData.append('photo', file);
-                        formData.append('view', view);
+        function emergencyStop() {
+            stopMoving();
+            sendCommand('S');
+            const cs = document.getElementById('controlStatus');
+            if (cs) cs.innerHTML = '<strong style="color:#ff6b6b">🛑 EMERGENCY STOP</strong>';
+        }
 
-                        statusDisplay.innerHTML = `<div class="spinner"></div> <strong>Uploading ${view} photo...</strong>`;
+        async function quickCommand(text) {
+            const cs = document.getElementById('controlStatus');
+            cs.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
+            try {
+                const response = await fetch('/text_chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const result = await response.json();
+                cs.innerHTML = `<p><strong style="color:#00ff88">🤖 Navis:</strong> ${result.response}</p>`;
+                updateFollowStatus(result.follow_active);
+            } catch (error) {
+                cs.innerHTML = '<div style="color:#ff6b6b">❌ Error</div>';
+            }
+        }
 
-                        try {
-                                const response = await fetch('/upload_person_photo', {
-                                        method: 'POST',
-                                        body: formData
-                                });
+        async function sendText() {
+            const input = document.getElementById('textInput');
+            const text = input.value.trim();
+            if (!text) return;
 
-                                const result = await response.json();
+            statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
 
-                                if (result.success) {
-                                        statusDisplay.innerHTML = `<strong style="color: #00ff88;">✅ ${result.message}</strong>`;
-                                        updatePersonStatus();
-                                } else {
-                                        statusDisplay.innerHTML = `<strong style="color: #ff6b6b;">❌ ${result.error}</strong>`;
-                                }
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">❌ Upload failed</strong>';
-                        }
+            try {
+                const response = await fetch('/text_chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const result = await response.json();
+                statusDisplay.innerHTML = `
+                    <p><strong style="color:#FFD700">👤 You:</strong> ${text}</p>
+                    <p><strong style="color:#00ff88">🤖 Navis:</strong> ${result.response}</p>`;
+                updateFollowStatus(result.follow_active);
+                input.value = '';
+            } catch (error) {
+                statusDisplay.innerHTML = '<div style="color:#ff6b6b">❌ Error</div>';
+            }
+        }
 
-                        fileInput.value = '';
-                }
+        document.getElementById('textInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendText();
+        });
 
-                async function clearPerson() {
-                        if (!confirm('Clear all training data?')) return;
+        // ============================================
+        //   HAND / WRIST / BICEP CONTROLS
+        // ============================================
+        const handStatus = document.getElementById('handStatus');
 
-                        try {
-                                const response = await fetch('/clear_person', { method: 'POST' });
-                                const result = await response.json();
+        async function controlHand(command) {
+            handStatus.innerHTML = '<div class="spinner"></div> Sending...';
+            try {
+                const res = await fetch('/hand_control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command })
+                });
+                const r = await res.json();
+                handStatus.innerHTML = r.success
+                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+            } catch (e) {
+                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
+            }
+        }
 
-                                statusDisplay.innerHTML = `<strong>✅ ${result.message}</strong>`;
-                                updatePersonStatus();
-                        } catch (error) {
-                                statusDisplay.innerHTML = '<strong style="color: #ff6b6b;">❌ Clear failed</strong>';
-                        }
-                }
+        let wristTimeout = null;
+        function updateWrist(side, angle) {
+            const display = side === 'L' ? document.getElementById('leftAngle') : document.getElementById('rightAngle');
+            display.textContent = angle + '°';
+            clearTimeout(wristTimeout);
+            wristTimeout = setTimeout(() => sendWristCommand(side, angle), 150);
+        }
 
-                async function updatePersonStatus() {
-                        try {
-                                const response = await fetch('/person_status');
-                                const data = await response.json();
+        async function sendWristCommand(side, angle) {
+            try {
+                const res = await fetch('/wrist_control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ side, angle })
+                });
+                const r = await res.json();
+                handStatus.innerHTML = r.success
+                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+            } catch (e) {
+                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
+            }
+        }
 
-                                const trainingStatus = document.getElementById('trainingStatus');
-                                const viewsList = document.getElementById('viewsList');
+        async function controlBicep(command) {
+            handStatus.innerHTML = '<div class="spinner"></div> Sending...';
+            try {
+                const res = await fetch('/bicep_control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command })
+                });
+                const r = await res.json();
+                handStatus.innerHTML = r.success
+                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+            } catch (e) {
+                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
+            }
+        }
 
-                                if (data.enrolled) {
-                                        trainingStatus.className = 'training-status enrolled';
-                                        trainingStatus.innerHTML = `✅ ${data.name} Enrolled`;
-                                        viewsList.innerHTML = `Views: ${data.views.join(', ')} (${data.total_views} total)`;
-                                } else {
-                                        trainingStatus.className = 'training-status not-enrolled';
-                                        trainingStatus.innerHTML = '⚠️ No person enrolled';
-                                        viewsList.innerHTML = '';
-                                }
-                        } catch (error) {
-                                console.error('Status error:', error);
-                        }
-                }
-
-                // ============================================
-                //   CAMERA CONTROLS
-                // ============================================
-                async function toggleFaceDetection() {
-                        try {
-                                const response = await fetch('/toggle_face_detection', { method: 'POST' });
-                                const result = await response.json();
-
-                                if (result.enabled) {
-                                        faceDetectBtn.classList.add('active');
-                                } else {
-                                        faceDetectBtn.classList.remove('active');
-                                }
-                        } catch (error) {
-                                console.error('Toggle error:', error);
-                        }
-                }
-
-                // ============================================
-                //   STATUS UPDATES
-                // ============================================
-                function updateFollowStatus(isActive) {
-                        if (isActive) {
-                                followStatus.classList.remove('inactive');
-                                followStatus.classList.add('active');
-                                followStatus.innerHTML = '✅ FOLLOW MODE';
-                        } else {
-                                followStatus.classList.remove('active');
-                                followStatus.classList.add('inactive');
-                                followStatus.innerHTML = '⏸️ MANUAL';
-                        }
-                }
-
-                // Status polling
-                setInterval(async () => {
-                        try {
-                                const response = await fetch('/status');
-                                const data = await response.json();
-                                updateFollowStatus(data.follow_active);
-                        } catch (error) {
-                                console.error('Status error:', error);
-                        }
-                }, 2000);
-
-                // Person status polling
-                setInterval(updatePersonStatus, 3000);
-
-                // Initialize
-                initMicrophone();
+        // ============================================
+        //   PERSON TRAINING
+        // ============================================
+        async function captureView(view) {
+            statusDisplay.innerHTML = `<div class="spinner"></div> <strong>Capturing ${view} view...</strong>`;
+            try {
+                const res = await fetch('/capture_person', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ view })
+                });
+                const r = await res.json();
+                statusDisplay.innerHTML = r.success
+                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
                 updatePersonStatus();
+            } catch (e) {
+                statusDisplay.innerHTML = '<strong style="color:#ff6b6b">❌ Capture failed</strong>';
+            }
+        }
+
+        async function uploadPhoto(view) {
+            const fileInput = view === 'front' ? document.getElementById('photoUploadFront') : document.getElementById('photoUploadBack');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('view', view);
+
+            try {
+                const res = await fetch('/upload_person_photo', { method: 'POST', body: formData });
+                const r = await res.json();
+                statusDisplay.innerHTML = r.success
+                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+                updatePersonStatus();
+            } catch (e) {
+                statusDisplay.innerHTML = '<strong style="color:#ff6b6b">❌ Upload failed</strong>';
+            }
+            fileInput.value = '';
+        }
+
+        async function clearPerson() {
+            if (!confirm('Clear all person training data?')) return;
+            try {
+                const res = await fetch('/clear_person', { method: 'POST' });
+                const r = await res.json();
+                statusDisplay.innerHTML = `<strong>✅ ${r.message}</strong>`;
+                updatePersonStatus();
+            } catch (e) {
+                statusDisplay.innerHTML = '<strong style="color:#ff6b6b">❌ Clear failed</strong>';
+            }
+        }
+
+        async function updatePersonStatus() {
+            try {
+                const res = await fetch('/person_status');
+                const data = await res.json();
+                const ts = document.getElementById('trainingStatus');
+                const vl = document.getElementById('viewsList');
+                if (data.enrolled) {
+                    ts.className = 'training-status enrolled';
+                    ts.innerHTML = `✅ ${data.name} Enrolled`;
+                    vl.innerHTML = `Views: ${data.views.join(', ')} (${data.total_views} total)`;
+                } else {
+                    ts.className = 'training-status not-enrolled';
+                    ts.innerHTML = '⚠️ No person enrolled';
+                    vl.innerHTML = '';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // ============================================
+        //   CAMERA CONTROLS
+        // ============================================
+        async function toggleFaceDetection() {
+            try {
+                const res = await fetch('/toggle_face_detection', { method: 'POST' });
+                const r = await res.json();
+                const btn = document.getElementById('faceDetectBtn');
+                if (r.enabled) {
+                    btn.classList.add('btn-fill-gold');
+                    btn.classList.remove('btn-gold');
+                } else {
+                    btn.classList.remove('btn-fill-gold');
+                    btn.classList.add('btn-gold');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // ============================================
+        //   MODEL TRAINING
+        // ============================================
+        async function addTrainingPair() {
+            const q = document.getElementById('trainQuestion').value.trim();
+            const a = document.getElementById('trainAnswer').value.trim();
+            if (!q || !a) return alert('Please fill in both question and answer.');
+
+            try {
+                const res = await fetch('/train_model', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: q, answer: a })
+                });
+                const r = await res.json();
+                if (r.success) {
+                    document.getElementById('trainQuestion').value = '';
+                    document.getElementById('trainAnswer').value = '';
+                    loadTrainingData();
+                    alert('✅ Training pair added!');
+                } else {
+                    alert('❌ ' + r.error);
+                }
+            } catch (e) {
+                alert('❌ Failed to add training pair');
+            }
+        }
+
+        async function loadTrainingData() {
+            try {
+                const res = await fetch('/training_data');
+                const data = await res.json();
+                const list = document.getElementById('trainingList');
+                const count = document.getElementById('pairCount');
+                count.textContent = `${data.total} knowledge pairs`;
+
+                if (data.pairs.length === 0) {
+                    list.innerHTML = '<div class="text-center" style="padding:20px;opacity:0.3">No training data yet</div>';
+                    return;
+                }
+
+                list.innerHTML = data.pairs.map((p, i) => `
+                    <div class="training-pair">
+                        <div class="pair-content">
+                            <div class="pair-q">Q: ${p.question}</div>
+                            <div class="pair-a">A: ${p.answer.substring(0, 80)}${p.answer.length > 80 ? '...' : ''}</div>
+                        </div>
+                        <button class="delete-pair" onclick="deleteTrainingPair(${i})" title="Delete">✕</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function deleteTrainingPair(index) {
+            if (!confirm('Delete this training pair?')) return;
+            try {
+                await fetch(`/training_data/${index}`, { method: 'DELETE' });
+                loadTrainingData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function reloadTraining() {
+            try {
+                await fetch('/reload_training', { method: 'POST' });
+                loadTrainingData();
+            } catch (e) { console.error(e); }
+        }
+
+        // ============================================
+        //   STATUS UPDATES
+        // ============================================
+        function updateFollowStatus(isActive) {
+            if (isActive) {
+                followStatus.classList.remove('inactive');
+                followStatus.classList.add('active');
+                followStatus.innerHTML = '✅ FOLLOW';
+            } else {
+                followStatus.classList.remove('active');
+                followStatus.classList.add('inactive');
+                followStatus.innerHTML = '⏸️ MANUAL';
+            }
+        }
+
+        setInterval(async () => {
+            try {
+                const res = await fetch('/status');
+                const data = await res.json();
+                updateFollowStatus(data.follow_active);
+            } catch (e) {}
+        }, 3000);
+
+        setInterval(updatePersonStatus, 5000);
+
+        // Init
+        initMicrophone();
+        updatePersonStatus();
         </script>
 </body>
 
