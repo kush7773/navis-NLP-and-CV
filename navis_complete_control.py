@@ -176,6 +176,9 @@ def generate_frames():
         if not ret:
             break
         
+        # Fix inverted camera — flip horizontally (mirror)
+        frame = cv2.flip(frame, 1)
+        
         frame_height, frame_width = frame.shape[:2]
         frame_center_x = frame_width // 2
         
@@ -651,6 +654,36 @@ def bicep_control():
 #   PERSON-SPECIFIC TRACKING ENDPOINTS
 # ============================================
 
+def _verify_face_with_haar(image):
+    """Verify face is present using OpenCV Haar cascade (fallback when face_recognition unavailable)"""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(60, 60))
+    return len(faces) > 0, len(faces)
+
+def _save_person_image(image, name, view):
+    """Save person image to disk for enrollment (fallback mode)"""
+    os.makedirs('person_images', exist_ok=True)
+    filepath = os.path.join('person_images', f'{view}.jpg')
+    cv2.imwrite(filepath, image)
+    # Also save metadata
+    import json
+    meta_path = os.path.join('person_images', 'metadata.json')
+    meta = {}
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path, 'r') as f:
+                meta = json.load(f)
+        except:
+            meta = {}
+    meta['name'] = name
+    meta['views'] = meta.get('views', [])
+    if view not in meta['views']:
+        meta['views'].append(view)
+    with open(meta_path, 'w') as f:
+        json.dump(meta, f)
+    return filepath
+
 @app.route('/upload_person_photo', methods=['POST'])
 def upload_person_photo():
     """Upload front/back/side photos to train on person"""
@@ -671,14 +704,24 @@ def upload_person_photo():
         if image is None:
             return jsonify({'error': 'Invalid image file'}), 400
         
-        encoding, error = generate_face_encoding(image)
-        
-        if error:
-            return jsonify({'error': error}), 400
-        
-        target_person_encodings[view] = encoding
-        target_person_name = name
-        save_target_encoding(encoding, name, view)
+        # Use face_recognition if available, otherwise use Haar cascade fallback
+        if generate_face_encoding:
+            encoding, error = generate_face_encoding(image)
+            if error:
+                return jsonify({'error': error}), 400
+            target_person_encodings[view] = encoding
+            target_person_name = name
+            save_target_encoding(encoding, name, view)
+        else:
+            # Fallback: verify face with Haar cascade and save image
+            has_face, face_count = _verify_face_with_haar(image)
+            if not has_face:
+                return jsonify({'error': 'No face detected. Please ensure your face is clearly visible.'}), 400
+            if face_count > 1:
+                return jsonify({'error': f'Multiple faces detected ({face_count}). Please ensure only one person is visible.'}), 400
+            _save_person_image(image, name, view)
+            target_person_name = name
+            target_person_encodings[view] = True  # Mark as enrolled
         
         return jsonify({
             'success': True,
@@ -708,14 +751,24 @@ def capture_person():
         if not ret:
             return jsonify({'error': 'Failed to capture frame'}), 500
         
-        encoding, error = generate_face_encoding(frame)
-        
-        if error:
-            return jsonify({'error': error}), 400
-        
-        target_person_encodings[view] = encoding
-        target_person_name = name
-        save_target_encoding(encoding, name, view)
+        # Use face_recognition if available, otherwise use Haar cascade fallback
+        if generate_face_encoding:
+            encoding, error = generate_face_encoding(frame)
+            if error:
+                return jsonify({'error': error}), 400
+            target_person_encodings[view] = encoding
+            target_person_name = name
+            save_target_encoding(encoding, name, view)
+        else:
+            # Fallback: verify face with Haar cascade and save image
+            has_face, face_count = _verify_face_with_haar(frame)
+            if not has_face:
+                return jsonify({'error': 'No face detected. Please position yourself in front of the camera.'}), 400
+            if face_count > 1:
+                return jsonify({'error': f'Multiple faces detected ({face_count}). Please ensure only one person is visible.'}), 400
+            _save_person_image(frame, name, view)
+            target_person_name = name
+            target_person_encodings[view] = True  # Mark as enrolled
         
         return jsonify({
             'success': True,
@@ -844,7 +897,7 @@ if __name__ == '__main__':
     print(f"\n{'='*60}")
     print(f"🤖 {ROBOT_NAME} Complete Control Interface")
     print(f"{'='*60}")
-    print(f"\n📱 Access: http://{RASPBERRY_PI_IP}:{VOICE_PORT}")
+    print(f"\n📱 Access: http://{RASPBERRY_PI_IP}:8080")
     print(f"\n✨ Features:")
     print(f"   📹 Live Camera Feed")
     print(f"   🎤 Voice Control")
@@ -856,7 +909,7 @@ if __name__ == '__main__':
     print(f"\n{'='*60}\n")
     
     try:
-        app.run(host='0.0.0.0', port=VOICE_PORT, debug=False, threaded=True)
+        app.run(host='0.0.0.0', port=8080, debug=False, threaded=True)
     finally:
         if bot:
             bot.close()
