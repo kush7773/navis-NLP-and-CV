@@ -702,6 +702,179 @@
                         margin-bottom: 12px;
                 }
 
+                /* ============================================
+                   FLOATING EMERGENCY STOP (ALL TABS)
+                   ============================================ */
+                .global-emergency {
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        width: 64px;
+                        height: 64px;
+                        border-radius: 50%;
+                        background: linear-gradient(135deg, #dc2626, #991b1b);
+                        border: 3px solid #ff6b6b;
+                        color: white;
+                        font-size: 28px;
+                        cursor: pointer;
+                        z-index: 999;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 4px 20px rgba(220, 38, 38, 0.5);
+                        transition: all 0.2s ease;
+                        animation: emergency-glow 2s infinite;
+                }
+
+                .global-emergency:active {
+                        transform: scale(0.9);
+                        box-shadow: 0 0 40px rgba(220, 38, 38, 0.8);
+                }
+
+                @keyframes emergency-glow {
+
+                        0%,
+                        100% {
+                                box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+                        }
+
+                        50% {
+                                box-shadow: 0 4px 30px rgba(220, 38, 38, 0.7);
+                        }
+                }
+
+                /* ============================================
+                   STOP SPEAKING BUTTON
+                   ============================================ */
+                .stop-speaking-btn {
+                        display: none;
+                        width: 100%;
+                        padding: 12px;
+                        margin-top: 10px;
+                        background: linear-gradient(135deg, #dc2626, #b91c1c);
+                        border: none;
+                        border-radius: 10px;
+                        color: white;
+                        font-family: 'Inter', sans-serif;
+                        font-size: 14px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        letter-spacing: 0.5px;
+                }
+
+                .stop-speaking-btn.visible {
+                        display: block;
+                        animation: fadeIn 0.3s ease;
+                }
+
+                .stop-speaking-btn:active {
+                        transform: scale(0.97);
+                }
+
+                /* ============================================
+                   CHAT MESSAGES
+                   ============================================ */
+                .chat-messages {
+                        max-height: 350px;
+                        overflow-y: auto;
+                        padding: 8px 0;
+                }
+
+                .chat-msg {
+                        padding: 10px 14px;
+                        border-radius: 12px;
+                        margin-bottom: 8px;
+                        font-size: 13px;
+                        line-height: 1.5;
+                        animation: fadeIn 0.3s ease;
+                }
+
+                .chat-msg.user {
+                        background: rgba(255, 215, 0, 0.08);
+                        border: 1px solid rgba(255, 215, 0, 0.15);
+                        margin-left: 20%;
+                }
+
+                .chat-msg.bot {
+                        background: rgba(0, 255, 136, 0.06);
+                        border: 1px solid rgba(0, 255, 136, 0.12);
+                        margin-right: 20%;
+                }
+
+                .chat-msg .msg-label {
+                        font-weight: 700;
+                        font-size: 11px;
+                        margin-bottom: 4px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                }
+
+                .chat-msg.user .msg-label {
+                        color: #FFD700;
+                }
+
+                .chat-msg.bot .msg-label {
+                        color: #00ff88;
+                }
+
+                .speaking-indicator {
+                        display: inline-block;
+                        margin-left: 6px;
+                        animation: pulse 1s infinite;
+                        font-size: 12px;
+                }
+
+                /* ============================================
+                   FOLLOW MODE CONTROLS (Camera Tab)
+                   ============================================ */
+                .follow-controls {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 10px;
+                        margin-top: 12px;
+                }
+
+                .follow-btn {
+                        padding: 14px;
+                        border-radius: 12px;
+                        font-family: 'Inter', sans-serif;
+                        font-weight: 700;
+                        font-size: 14px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        text-align: center;
+                        letter-spacing: 0.5px;
+                }
+
+                .follow-btn.follow {
+                        background: rgba(0, 255, 136, 0.08);
+                        border: 2px solid rgba(0, 255, 136, 0.4);
+                        color: #00ff88;
+                }
+
+                .follow-btn.follow:active {
+                        background: rgba(0, 255, 136, 0.2);
+                        box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+                }
+
+                .follow-btn.follow.active {
+                        background: rgba(0, 255, 136, 0.2);
+                        box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+                        animation: glow-green 2s infinite;
+                }
+
+                .follow-btn.stop-follow {
+                        background: rgba(255, 107, 107, 0.08);
+                        border: 2px solid rgba(255, 107, 107, 0.4);
+                        color: #ff6b6b;
+                }
+
+                .follow-btn.stop-follow:active {
+                        background: rgba(255, 107, 107, 0.2);
+                        box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+                }
+
                 /* Mobile responsive */
                 @media (max-width: 480px) {
                         .header {
@@ -734,6 +907,22 @@
                         .joystick {
                                 grid-template-columns: repeat(3, 60px);
                                 grid-template-rows: repeat(3, 60px);
+                        }
+
+                        .global-emergency {
+                                width: 56px;
+                                height: 56px;
+                                bottom: 16px;
+                                right: 16px;
+                                font-size: 24px;
+                        }
+
+                        .chat-msg.user {
+                                margin-left: 10%;
+                        }
+
+                        .chat-msg.bot {
+                                margin-right: 10%;
                         }
                 }
         </style>
@@ -805,16 +994,10 @@
                 </div>
 
                 <div class="panel">
-                        <div class="panel-title">⚡ Quick Commands</div>
-                        <div class="quick-commands">
-                                <button class="btn btn-green" onclick="quickCommand('follow me navis')">🎯 Follow
-                                        Me</button>
-                                <button class="btn btn-red" onclick="quickCommand('stop navis')">⏹️ Stop</button>
-                        </div>
                         <div class="status-display" id="controlStatus">
                                 <strong>Ready</strong>
                                 <p style="opacity: 0.5; margin-top: 6px; font-size: 12px;">
-                                        Use joystick to move • Quick commands for follow mode
+                                        Use joystick to move • Emergency stop is always available
                                 </p>
                         </div>
                 </div>
@@ -836,6 +1019,21 @@
                         {% else %}
                         <div class="camera-placeholder">📹 Camera Not Available</div>
                         {% endif %}
+
+                        <!-- Follow / Stop Controls -->
+                        <div class="follow-controls">
+                                <button class="follow-btn follow" id="followBtn" onclick="toggleFollow(true)">
+                                        🎯 Follow Me NAVIS
+                                </button>
+                                <button class="follow-btn stop-follow" id="stopFollowBtn" onclick="toggleFollow(false)">
+                                        ⏹️ Stop NAVIS
+                                </button>
+                        </div>
+                        <div class="status-display mt-12" id="cameraStatus">
+                                <strong>Camera ready</strong>
+                                <p style="opacity: 0.5; margin-top: 4px; font-size: 12px;">Use Follow/Stop to control
+                                        person tracking</p>
+                        </div>
                 </div>
 
                 <div class="panel">
@@ -877,16 +1075,18 @@
                                 <button class="mic-button" id="micBtn">🎤</button>
                                 <p style="font-size: 11px; opacity: 0.4; margin-top: 8px;">Hold to speak</p>
                         </div>
+                        <button class="stop-speaking-btn" id="stopSpeakingBtn" onclick="stopSpeaking()">
+                                🔇 Stop Speaking
+                        </button>
                 </div>
 
                 <div class="panel">
                         <div class="panel-title">💬 Chat</div>
-                        <div class="status-display" id="statusDisplay">
-                                <strong>Ready to listen...</strong>
-                                <p style="opacity: 0.5; margin-top: 8px; font-size: 12px;">
-                                        🎤 Hold mic button to speak<br>
-                                        💬 Or type a message below
-                                </p>
+                        <div class="chat-messages" id="chatMessages">
+                                <div class="chat-msg bot">
+                                        <div class="msg-label">🤖 NAVIS</div>
+                                        Hello! I'm NAVIS. Ask me anything by voice or text.
+                                </div>
                         </div>
                         <div class="text-input-group">
                                 <input type="text" class="text-input" id="textInput"
@@ -973,6 +1173,7 @@
                         <div class="status-display" id="handStatus">
                                 <strong>Ready to control hands & arms</strong>
                         </div>
+                        <button class="emergency-stop mt-12" onclick="emergencyStop()">🛑 EMERGENCY STOP ALL</button>
                 </div>
         </div>
 
@@ -1010,372 +1211,533 @@
                 </div>
         </div>
 
+        <!-- FLOATING EMERGENCY STOP (visible on all tabs) -->
+        <button class="global-emergency" onclick="emergencyStop()" title="EMERGENCY STOP">🛑</button>
+
         <!-- ============================================
          JAVASCRIPT
          ============================================ -->
         <script>
-        let mediaRecorder;
-        let audioChunks = [];
-        const micBtn = document.getElementById('micBtn');
-        const statusDisplay = document.getElementById('statusDisplay');
-        const followStatus = document.getElementById('followStatus');
+                let mediaRecorder;
+                let audioChunks = [];
+                const micBtn = document.getElementById('micBtn');
+                const chatMessages = document.getElementById('chatMessages');
+                const followStatus = document.getElementById('followStatus');
+                const stopSpeakingBtn = document.getElementById('stopSpeakingBtn');
 
-        // ============================================
-        //   TAB SWITCHING
-        // ============================================
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tabName).classList.add('active');
-            event.currentTarget.classList.add('active');
+                // ============================================
+                //   WEB SPEECH API (Text-to-Speech)
+                // ============================================
+                const synth = window.speechSynthesis;
+                let isSpeaking = false;
 
-            // Load training data when visiting train tab
-            if (tabName === 'training') loadTrainingData();
-        }
+                function speakText(text) {
+                        synth.cancel();
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.rate = 1.0;
+                        utterance.pitch = 1.0;
+                        utterance.volume = 1.0;
 
-        // ============================================
-        //   CONTINUOUS MOVEMENT
-        // ============================================
-        let moveInterval = null;
+                        const voices = synth.getVoices();
+                        const preferred = voices.find(v => v.name.includes('Google') && v.lang.startsWith('en'))
+                                || voices.find(v => v.lang.startsWith('en'));
+                        if (preferred) utterance.voice = preferred;
 
-        function startMoving(cmd) {
-            if (event && event.type === 'touchstart') event.preventDefault();
-            sendCommand(cmd);
-            if (moveInterval) clearInterval(moveInterval);
-            moveInterval = setInterval(() => sendCommand(cmd), 100);
-        }
+                        utterance.onstart = () => {
+                                isSpeaking = true;
+                                stopSpeakingBtn.classList.add('visible');
+                                const indicators = chatMessages.querySelectorAll('.chat-msg.bot:last-of-type .msg-label');
+                                const last = indicators[indicators.length - 1];
+                                if (last && !last.querySelector('.speaking-indicator')) {
+                                        last.innerHTML += '<span class="speaking-indicator">🔊</span>';
+                                }
+                        };
 
-        function stopMoving() {
-            if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
-            sendCommand('S');
-        }
+                        utterance.onend = () => {
+                                isSpeaking = false;
+                                stopSpeakingBtn.classList.remove('visible');
+                                document.querySelectorAll('.speaking-indicator').forEach(el => el.remove());
+                        };
 
-        // ============================================
-        //   MICROPHONE
-        // ============================================
-        async function initMicrophone() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-                });
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    audioChunks = [];
-                    await sendAudio(audioBlob);
-                };
-            } catch (error) {
-                console.error('Mic error:', error);
-                statusDisplay.innerHTML = '<div style="color:#ff6b6b">❌ Microphone access denied</div>';
-            }
-        }
+                        utterance.onerror = () => {
+                                isSpeaking = false;
+                                stopSpeakingBtn.classList.remove('visible');
+                                document.querySelectorAll('.speaking-indicator').forEach(el => el.remove());
+                        };
 
-        micBtn.addEventListener('mousedown', startRecording);
-        micBtn.addEventListener('touchstart', startRecording);
-        micBtn.addEventListener('mouseup', stopRecording);
-        micBtn.addEventListener('touchend', stopRecording);
-
-        function startRecording(e) {
-            e.preventDefault();
-            if (mediaRecorder && mediaRecorder.state === 'inactive') {
-                audioChunks = [];
-                mediaRecorder.start();
-                micBtn.classList.add('recording');
-                statusDisplay.innerHTML = '<strong>🎤 Listening...</strong>';
-            }
-        }
-
-        function stopRecording(e) {
-            e.preventDefault();
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-                micBtn.classList.remove('recording');
-            }
-        }
-
-        // ============================================
-        //   API CALLS
-        // ============================================
-        async function sendAudio(audioBlob) {
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.webm');
-            statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
-
-            try {
-                const response = await fetch('/audio_upload', { method: 'POST', body: formData });
-                const result = await response.json();
-                if (result.error) {
-                    statusDisplay.innerHTML = `<div style="color:#ff6b6b">❌ ${result.error}</div>`;
-                } else {
-                    statusDisplay.innerHTML = `
-                        <p><strong style="color:#FFD700">👤 You:</strong> ${result.transcription}</p>
-                        <p><strong style="color:#00ff88">🤖 Navis:</strong> ${result.response}</p>`;
-                    updateFollowStatus(result.follow_active);
-                }
-            } catch (error) {
-                statusDisplay.innerHTML = '<div style="color:#ff6b6b">❌ Network error</div>';
-            }
-        }
-
-        async function sendCommand(cmd) {
-            try {
-                fetch('/manual_control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: cmd })
-                }).catch(err => console.error(err));
-            } catch (error) { console.error(error); }
-        }
-
-        function emergencyStop() {
-            stopMoving();
-            sendCommand('S');
-            const cs = document.getElementById('controlStatus');
-            if (cs) cs.innerHTML = '<strong style="color:#ff6b6b">🛑 EMERGENCY STOP</strong>';
-        }
-
-        async function quickCommand(text) {
-            const cs = document.getElementById('controlStatus');
-            cs.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
-            try {
-                const response = await fetch('/text_chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
-                });
-                const result = await response.json();
-                cs.innerHTML = `<p><strong style="color:#00ff88">🤖 Navis:</strong> ${result.response}</p>`;
-                updateFollowStatus(result.follow_active);
-            } catch (error) {
-                cs.innerHTML = '<div style="color:#ff6b6b">❌ Error</div>';
-            }
-        }
-
-        async function sendText() {
-            const input = document.getElementById('textInput');
-            const text = input.value.trim();
-            if (!text) return;
-
-            statusDisplay.innerHTML = '<div class="spinner"></div> <strong>Processing...</strong>';
-
-            try {
-                const response = await fetch('/text_chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
-                });
-                const result = await response.json();
-                statusDisplay.innerHTML = `
-                    <p><strong style="color:#FFD700">👤 You:</strong> ${text}</p>
-                    <p><strong style="color:#00ff88">🤖 Navis:</strong> ${result.response}</p>`;
-                updateFollowStatus(result.follow_active);
-                input.value = '';
-            } catch (error) {
-                statusDisplay.innerHTML = '<div style="color:#ff6b6b">❌ Error</div>';
-            }
-        }
-
-        document.getElementById('textInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendText();
-        });
-
-        // ============================================
-        //   HAND / WRIST / BICEP CONTROLS
-        // ============================================
-        const handStatus = document.getElementById('handStatus');
-
-        async function controlHand(command) {
-            handStatus.innerHTML = '<div class="spinner"></div> Sending...';
-            try {
-                const res = await fetch('/hand_control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command })
-                });
-                const r = await res.json();
-                handStatus.innerHTML = r.success
-                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
-                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
-            } catch (e) {
-                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
-            }
-        }
-
-        let wristTimeout = null;
-        function updateWrist(side, angle) {
-            const display = side === 'L' ? document.getElementById('leftAngle') : document.getElementById('rightAngle');
-            display.textContent = angle + '°';
-            clearTimeout(wristTimeout);
-            wristTimeout = setTimeout(() => sendWristCommand(side, angle), 150);
-        }
-
-        async function sendWristCommand(side, angle) {
-            try {
-                const res = await fetch('/wrist_control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ side, angle })
-                });
-                const r = await res.json();
-                handStatus.innerHTML = r.success
-                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
-                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
-            } catch (e) {
-                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
-            }
-        }
-
-        async function controlBicep(command) {
-            handStatus.innerHTML = '<div class="spinner"></div> Sending...';
-            try {
-                const res = await fetch('/bicep_control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command })
-                });
-                const r = await res.json();
-                handStatus.innerHTML = r.success
-                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
-                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
-            } catch (e) {
-                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
-            }
-        }
-
-        // ============================================
-        //   PERSON TRAINING
-        // ============================================
-        async function captureView(view) {
-            statusDisplay.innerHTML = `<div class="spinner"></div> <strong>Capturing ${view} view...</strong>`;
-            try {
-                const res = await fetch('/capture_person', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ view })
-                });
-                const r = await res.json();
-                statusDisplay.innerHTML = r.success
-                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
-                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
-                updatePersonStatus();
-            } catch (e) {
-                statusDisplay.innerHTML = '<strong style="color:#ff6b6b">❌ Capture failed</strong>';
-            }
-        }
-
-        async function uploadPhoto(view) {
-            const fileInput = view === 'front' ? document.getElementById('photoUploadFront') : document.getElementById('photoUploadBack');
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('photo', file);
-            formData.append('view', view);
-
-            try {
-                const res = await fetch('/upload_person_photo', { method: 'POST', body: formData });
-                const r = await res.json();
-                statusDisplay.innerHTML = r.success
-                    ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
-                    : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
-                updatePersonStatus();
-            } catch (e) {
-                statusDisplay.innerHTML = '<strong style="color:#ff6b6b">❌ Upload failed</strong>';
-            }
-            fileInput.value = '';
-        }
-
-        async function clearPerson() {
-            if (!confirm('Clear all person training data?')) return;
-            try {
-                const res = await fetch('/clear_person', { method: 'POST' });
-                const r = await res.json();
-                statusDisplay.innerHTML = `<strong>✅ ${r.message}</strong>`;
-                updatePersonStatus();
-            } catch (e) {
-                statusDisplay.innerHTML = '<strong style="color:#ff6b6b">❌ Clear failed</strong>';
-            }
-        }
-
-        async function updatePersonStatus() {
-            try {
-                const res = await fetch('/person_status');
-                const data = await res.json();
-                const ts = document.getElementById('trainingStatus');
-                const vl = document.getElementById('viewsList');
-                if (data.enrolled) {
-                    ts.className = 'training-status enrolled';
-                    ts.innerHTML = `✅ ${data.name} Enrolled`;
-                    vl.innerHTML = `Views: ${data.views.join(', ')} (${data.total_views} total)`;
-                } else {
-                    ts.className = 'training-status not-enrolled';
-                    ts.innerHTML = '⚠️ No person enrolled';
-                    vl.innerHTML = '';
-                }
-            } catch (e) { console.error(e); }
-        }
-
-        // ============================================
-        //   CAMERA CONTROLS
-        // ============================================
-        async function toggleFaceDetection() {
-            try {
-                const res = await fetch('/toggle_face_detection', { method: 'POST' });
-                const r = await res.json();
-                const btn = document.getElementById('faceDetectBtn');
-                if (r.enabled) {
-                    btn.classList.add('btn-fill-gold');
-                    btn.classList.remove('btn-gold');
-                } else {
-                    btn.classList.remove('btn-fill-gold');
-                    btn.classList.add('btn-gold');
-                }
-            } catch (e) { console.error(e); }
-        }
-
-        // ============================================
-        //   MODEL TRAINING
-        // ============================================
-        async function addTrainingPair() {
-            const q = document.getElementById('trainQuestion').value.trim();
-            const a = document.getElementById('trainAnswer').value.trim();
-            if (!q || !a) return alert('Please fill in both question and answer.');
-
-            try {
-                const res = await fetch('/train_model', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: q, answer: a })
-                });
-                const r = await res.json();
-                if (r.success) {
-                    document.getElementById('trainQuestion').value = '';
-                    document.getElementById('trainAnswer').value = '';
-                    loadTrainingData();
-                    alert('✅ Training pair added!');
-                } else {
-                    alert('❌ ' + r.error);
-                }
-            } catch (e) {
-                alert('❌ Failed to add training pair');
-            }
-        }
-
-        async function loadTrainingData() {
-            try {
-                const res = await fetch('/training_data');
-                const data = await res.json();
-                const list = document.getElementById('trainingList');
-                const count = document.getElementById('pairCount');
-                count.textContent = `${data.total} knowledge pairs`;
-
-                if (data.pairs.length === 0) {
-                    list.innerHTML = '<div class="text-center" style="padding:20px;opacity:0.3">No training data yet</div>';
-                    return;
+                        synth.speak(utterance);
                 }
 
-                list.innerHTML = data.pairs.map((p, i) => `
+                function stopSpeaking() {
+                        synth.cancel();
+                        isSpeaking = false;
+                        stopSpeakingBtn.classList.remove('visible');
+                        document.querySelectorAll('.speaking-indicator').forEach(el => el.remove());
+                }
+
+                if (synth.onvoiceschanged !== undefined) {
+                        synth.onvoiceschanged = () => synth.getVoices();
+                }
+
+                // ============================================
+                //   CHAT MESSAGE MANAGEMENT
+                // ============================================
+                function addChatMessage(type, label, text) {
+                        const msg = document.createElement('div');
+                        msg.className = `chat-msg ${type}`;
+                        msg.innerHTML = `<div class="msg-label">${label}</div>${text}`;
+                        chatMessages.appendChild(msg);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+
+                function addLoadingMessage() {
+                        const msg = document.createElement('div');
+                        msg.className = 'chat-msg bot';
+                        msg.id = 'loading-msg';
+                        msg.innerHTML = '<div class="msg-label">🤖 NAVIS</div><div class="spinner"></div> Thinking...';
+                        chatMessages.appendChild(msg);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+
+                function removeLoadingMessage() {
+                        const el = document.getElementById('loading-msg');
+                        if (el) el.remove();
+                }
+
+                // ============================================
+                //   TAB SWITCHING
+                // ============================================
+                function switchTab(tabName) {
+                        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                        document.getElementById('tab-' + tabName).classList.add('active');
+                        event.currentTarget.classList.add('active');
+                        if (tabName === 'training') loadTrainingData();
+                }
+
+                // ============================================
+                //   CONTINUOUS MOVEMENT
+                // ============================================
+                let moveInterval = null;
+
+                function startMoving(cmd) {
+                        if (event && event.type === 'touchstart') event.preventDefault();
+                        sendCommand(cmd);
+                        if (moveInterval) clearInterval(moveInterval);
+                        moveInterval = setInterval(() => sendCommand(cmd), 100);
+                }
+
+                function stopMoving() {
+                        if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+                        sendCommand('S');
+                }
+
+                // ============================================
+                //   MICROPHONE
+                // ============================================
+                async function initMicrophone() {
+                        try {
+                                const stream = await navigator.mediaDevices.getUserMedia({
+                                        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                                });
+                                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+                                mediaRecorder.onstop = async () => {
+                                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                                        audioChunks = [];
+                                        await sendAudio(audioBlob);
+                                };
+                        } catch (error) {
+                                console.error('Mic error:', error);
+                                addChatMessage('bot', '🤖 NAVIS', '❌ Microphone access denied. Please allow microphone access.');
+                        }
+                }
+
+                micBtn.addEventListener('mousedown', startRecording);
+                micBtn.addEventListener('touchstart', startRecording);
+                micBtn.addEventListener('mouseup', stopRecording);
+                micBtn.addEventListener('touchend', stopRecording);
+
+                function startRecording(e) {
+                        e.preventDefault();
+                        if (mediaRecorder && mediaRecorder.state === 'inactive') {
+                                audioChunks = [];
+                                mediaRecorder.start();
+                                micBtn.classList.add('recording');
+                                addChatMessage('bot', '🤖 NAVIS', '🎤 Listening...');
+                        }
+                }
+
+                function stopRecording(e) {
+                        e.preventDefault();
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                                mediaRecorder.stop();
+                                micBtn.classList.remove('recording');
+                        }
+                }
+
+                // ============================================
+                //   API CALLS
+                // ============================================
+                async function sendAudio(audioBlob) {
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'recording.webm');
+
+                        // Remove "Listening..." and show loading
+                        const msgs = chatMessages.querySelectorAll('.chat-msg.bot');
+                        if (msgs.length > 0) {
+                                const lastMsg = msgs[msgs.length - 1];
+                                if (lastMsg.textContent.includes('Listening...')) lastMsg.remove();
+                        }
+                        addLoadingMessage();
+
+                        try {
+                                const response = await fetch('/audio_upload', { method: 'POST', body: formData });
+                                const result = await response.json();
+                                removeLoadingMessage();
+
+                                if (result.error) {
+                                        addChatMessage('bot', '🤖 NAVIS', `<span style="color:#ff6b6b">❌ ${result.error}</span>`);
+                                } else {
+                                        addChatMessage('user', '👤 You', result.transcription);
+                                        addChatMessage('bot', '🤖 NAVIS', result.response);
+                                        speakText(result.response);
+                                        updateFollowStatus(result.follow_active);
+                                }
+                        } catch (error) {
+                                removeLoadingMessage();
+                                addChatMessage('bot', '🤖 NAVIS', '<span style="color:#ff6b6b">❌ Network error</span>');
+                        }
+                }
+
+                async function sendCommand(cmd) {
+                        try {
+                                fetch('/manual_control', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ command: cmd })
+                                }).catch(err => console.error(err));
+                        } catch (error) { console.error(error); }
+                }
+
+                // ============================================
+                //   GLOBAL EMERGENCY STOP
+                // ============================================
+                function emergencyStop() {
+                        // Stop motors
+                        stopMoving();
+                        sendCommand('S');
+
+                        // Stop follow mode
+                        fetch('/text_chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ message: 'stop navis' })
+                        }).catch(() => { });
+
+                        // Stop biceps
+                        fetch('/bicep_control', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ command: 'BS' })
+                        }).catch(() => { });
+
+                        // Stop TTS
+                        stopSpeaking();
+
+                        // Update follow state
+                        updateFollowStatus(false);
+
+                        // Update all status displays
+                        const cs = document.getElementById('controlStatus');
+                        if (cs) cs.innerHTML = '<strong style="color:#ff6b6b">🛑 EMERGENCY STOP — All systems halted</strong>';
+
+                        const hs = document.getElementById('handStatus');
+                        if (hs) hs.innerHTML = '<strong style="color:#ff6b6b">🛑 EMERGENCY STOP</strong>';
+
+                        const camS = document.getElementById('cameraStatus');
+                        if (camS) camS.innerHTML = '<strong style="color:#ff6b6b">🛑 EMERGENCY STOP — Follow mode disabled</strong>';
+
+                        // Flash the global button
+                        const btn = document.querySelector('.global-emergency');
+                        btn.style.animation = 'none';
+                        btn.style.boxShadow = '0 0 40px rgba(220, 38, 38, 0.9)';
+                        setTimeout(() => { btn.style.animation = ''; btn.style.boxShadow = ''; }, 1500);
+                }
+
+                // ============================================
+                //   FOLLOW / STOP (Camera Tab)
+                // ============================================
+                async function toggleFollow(activate) {
+                        const camStatus = document.getElementById('cameraStatus');
+                        const followBtn = document.getElementById('followBtn');
+
+                        if (activate) {
+                                camStatus.innerHTML = '<div class="spinner"></div> <strong>Activating follow mode...</strong>';
+                                try {
+                                        const response = await fetch('/text_chat', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ message: 'follow me navis' })
+                                        });
+                                        const result = await response.json();
+                                        camStatus.innerHTML = `<strong style="color:#00ff88">🎯 ${result.response}</strong>`;
+                                        followBtn.classList.add('active');
+                                        updateFollowStatus(true);
+                                } catch (error) {
+                                        camStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Failed to activate follow</strong>';
+                                }
+                        } else {
+                                camStatus.innerHTML = '<div class="spinner"></div> <strong>Stopping...</strong>';
+                                try {
+                                        const response = await fetch('/text_chat', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ message: 'stop navis' })
+                                        });
+                                        const result = await response.json();
+                                        sendCommand('S');
+                                        camStatus.innerHTML = `<strong style="color:#ff6b6b">⏹️ ${result.response}</strong>`;
+                                        followBtn.classList.remove('active');
+                                        updateFollowStatus(false);
+                                } catch (error) {
+                                        camStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Failed to stop</strong>';
+                                }
+                        }
+                }
+
+                // ============================================
+                //   TEXT CHAT (with voice reply)
+                // ============================================
+                async function sendText() {
+                        const input = document.getElementById('textInput');
+                        const text = input.value.trim();
+                        if (!text) return;
+                        input.value = '';
+
+                        addChatMessage('user', '👤 You', text);
+                        addLoadingMessage();
+
+                        try {
+                                const response = await fetch('/text_chat', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ message: text })
+                                });
+                                const result = await response.json();
+                                removeLoadingMessage();
+                                addChatMessage('bot', '🤖 NAVIS', result.response);
+                                speakText(result.response);
+                                updateFollowStatus(result.follow_active);
+                        } catch (error) {
+                                removeLoadingMessage();
+                                addChatMessage('bot', '🤖 NAVIS', '<span style="color:#ff6b6b">❌ Error sending message</span>');
+                        }
+                }
+
+                document.getElementById('textInput').addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') sendText();
+                });
+
+                // ============================================
+                //   HAND / WRIST / BICEP CONTROLS
+                // ============================================
+                const handStatus = document.getElementById('handStatus');
+
+                async function controlHand(command) {
+                        handStatus.innerHTML = '<div class="spinner"></div> Sending...';
+                        try {
+                                const res = await fetch('/hand_control', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ command })
+                                });
+                                const r = await res.json();
+                                handStatus.innerHTML = r.success
+                                        ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                                        : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+                        } catch (e) {
+                                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
+                        }
+                }
+
+                let wristTimeout = null;
+                function updateWrist(side, angle) {
+                        const display = side === 'L' ? document.getElementById('leftAngle') : document.getElementById('rightAngle');
+                        display.textContent = angle + '°';
+                        clearTimeout(wristTimeout);
+                        wristTimeout = setTimeout(() => sendWristCommand(side, angle), 150);
+                }
+
+                async function sendWristCommand(side, angle) {
+                        try {
+                                const res = await fetch('/wrist_control', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ side, angle })
+                                });
+                                const r = await res.json();
+                                handStatus.innerHTML = r.success
+                                        ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                                        : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+                        } catch (e) {
+                                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
+                        }
+                }
+
+                async function controlBicep(command) {
+                        handStatus.innerHTML = '<div class="spinner"></div> Sending...';
+                        try {
+                                const res = await fetch('/bicep_control', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ command })
+                                });
+                                const r = await res.json();
+                                handStatus.innerHTML = r.success
+                                        ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                                        : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+                        } catch (e) {
+                                handStatus.innerHTML = '<strong style="color:#ff6b6b">❌ Connection error</strong>';
+                        }
+                }
+
+                // ============================================
+                //   PERSON TRAINING
+                // ============================================
+                async function captureView(view) {
+                        const camS = document.getElementById('cameraStatus');
+                        camS.innerHTML = `<div class="spinner"></div> <strong>Capturing ${view} view...</strong>`;
+                        try {
+                                const res = await fetch('/capture_person', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ view })
+                                });
+                                const r = await res.json();
+                                camS.innerHTML = r.success
+                                        ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                                        : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+                                updatePersonStatus();
+                        } catch (e) {
+                                camS.innerHTML = '<strong style="color:#ff6b6b">❌ Capture failed</strong>';
+                        }
+                }
+
+                async function uploadPhoto(view) {
+                        const fileInput = view === 'front' ? document.getElementById('photoUploadFront') : document.getElementById('photoUploadBack');
+                        const file = fileInput.files[0];
+                        if (!file) return;
+
+                        const formData = new FormData();
+                        formData.append('photo', file);
+                        formData.append('view', view);
+                        const camS = document.getElementById('cameraStatus');
+
+                        try {
+                                const res = await fetch('/upload_person_photo', { method: 'POST', body: formData });
+                                const r = await res.json();
+                                camS.innerHTML = r.success
+                                        ? `<strong style="color:#00ff88">✅ ${r.message}</strong>`
+                                        : `<strong style="color:#ff6b6b">❌ ${r.error}</strong>`;
+                                updatePersonStatus();
+                        } catch (e) {
+                                camS.innerHTML = '<strong style="color:#ff6b6b">❌ Upload failed</strong>';
+                        }
+                        fileInput.value = '';
+                }
+
+                async function clearPerson() {
+                        if (!confirm('Clear all person training data?')) return;
+                        const camS = document.getElementById('cameraStatus');
+                        try {
+                                const res = await fetch('/clear_person', { method: 'POST' });
+                                const r = await res.json();
+                                camS.innerHTML = `<strong>✅ ${r.message}</strong>`;
+                                updatePersonStatus();
+                        } catch (e) {
+                                camS.innerHTML = '<strong style="color:#ff6b6b">❌ Clear failed</strong>';
+                        }
+                }
+
+                async function updatePersonStatus() {
+                        try {
+                                const res = await fetch('/person_status');
+                                const data = await res.json();
+                                const ts = document.getElementById('trainingStatus');
+                                const vl = document.getElementById('viewsList');
+                                if (data.enrolled) {
+                                        ts.className = 'training-status enrolled';
+                                        ts.innerHTML = `✅ ${data.name} Enrolled`;
+                                        vl.innerHTML = `Views: ${data.views.join(', ')} (${data.total_views} total)`;
+                                } else {
+                                        ts.className = 'training-status not-enrolled';
+                                        ts.innerHTML = '⚠️ No person enrolled';
+                                        vl.innerHTML = '';
+                                }
+                        } catch (e) { console.error(e); }
+                }
+
+                // ============================================
+                //   CAMERA CONTROLS
+                // ============================================
+                async function toggleFaceDetection() {
+                        try {
+                                const res = await fetch('/toggle_face_detection', { method: 'POST' });
+                                const r = await res.json();
+                                const btn = document.getElementById('faceDetectBtn');
+                                if (r.enabled) {
+                                        btn.classList.add('btn-fill-gold');
+                                        btn.classList.remove('btn-gold');
+                                } else {
+                                        btn.classList.remove('btn-fill-gold');
+                                        btn.classList.add('btn-gold');
+                                }
+                        } catch (e) { console.error(e); }
+                }
+
+                // ============================================
+                //   MODEL TRAINING
+                // ============================================
+                async function addTrainingPair() {
+                        const q = document.getElementById('trainQuestion').value.trim();
+                        const a = document.getElementById('trainAnswer').value.trim();
+                        if (!q || !a) return alert('Please fill in both question and answer.');
+
+                        try {
+                                const res = await fetch('/train_model', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ question: q, answer: a })
+                                });
+                                const r = await res.json();
+                                if (r.success) {
+                                        document.getElementById('trainQuestion').value = '';
+                                        document.getElementById('trainAnswer').value = '';
+                                        loadTrainingData();
+                                        alert('✅ Training pair added!');
+                                } else {
+                                        alert('❌ ' + r.error);
+                                }
+                        } catch (e) {
+                                alert('❌ Failed to add training pair');
+                        }
+                }
+
+                async function loadTrainingData() {
+                        try {
+                                const res = await fetch('/training_data');
+                                const data = await res.json();
+                                const list = document.getElementById('trainingList');
+                                const count = document.getElementById('pairCount');
+                                count.textContent = `${data.total} knowledge pairs`;
+
+                                if (data.pairs.length === 0) {
+                                        list.innerHTML = '<div class="text-center" style="padding:20px;opacity:0.3">No training data yet</div>';
+                                        return;
+                                }
+
+                                list.innerHTML = data.pairs.map((p, i) => `
                     <div class="training-pair">
                         <div class="pair-content">
                             <div class="pair-q">Q: ${p.question}</div>
@@ -1384,55 +1746,59 @@
                         <button class="delete-pair" onclick="deleteTrainingPair(${i})" title="Delete">✕</button>
                     </div>
                 `).join('');
-            } catch (e) {
-                console.error(e);
-            }
-        }
+                        } catch (e) {
+                                console.error(e);
+                        }
+                }
 
-        async function deleteTrainingPair(index) {
-            if (!confirm('Delete this training pair?')) return;
-            try {
-                await fetch(`/training_data/${index}`, { method: 'DELETE' });
-                loadTrainingData();
-            } catch (e) { console.error(e); }
-        }
+                async function deleteTrainingPair(index) {
+                        if (!confirm('Delete this training pair?')) return;
+                        try {
+                                await fetch(`/training_data/${index}`, { method: 'DELETE' });
+                                loadTrainingData();
+                        } catch (e) { console.error(e); }
+                }
 
-        async function reloadTraining() {
-            try {
-                await fetch('/reload_training', { method: 'POST' });
-                loadTrainingData();
-            } catch (e) { console.error(e); }
-        }
+                async function reloadTraining() {
+                        try {
+                                await fetch('/reload_training', { method: 'POST' });
+                                loadTrainingData();
+                        } catch (e) { console.error(e); }
+                }
 
-        // ============================================
-        //   STATUS UPDATES
-        // ============================================
-        function updateFollowStatus(isActive) {
-            if (isActive) {
-                followStatus.classList.remove('inactive');
-                followStatus.classList.add('active');
-                followStatus.innerHTML = '✅ FOLLOW';
-            } else {
-                followStatus.classList.remove('active');
-                followStatus.classList.add('inactive');
-                followStatus.innerHTML = '⏸️ MANUAL';
-            }
-        }
+                // ============================================
+                //   STATUS UPDATES
+                // ============================================
+                function updateFollowStatus(isActive) {
+                        const followBtn = document.getElementById('followBtn');
+                        if (isActive) {
+                                followStatus.classList.remove('inactive');
+                                followStatus.classList.add('active');
+                                followStatus.innerHTML = '✅ FOLLOW';
+                                if (followBtn) followBtn.classList.add('active');
+                        } else {
+                                followStatus.classList.remove('active');
+                                followStatus.classList.add('inactive');
+                                followStatus.innerHTML = '⏸️ MANUAL';
+                                if (followBtn) followBtn.classList.remove('active');
+                        }
+                }
 
-        setInterval(async () => {
-            try {
-                const res = await fetch('/status');
-                const data = await res.json();
-                updateFollowStatus(data.follow_active);
-            } catch (e) {}
-        }, 3000);
+                setInterval(async () => {
+                        try {
+                                const res = await fetch('/status');
+                                const data = await res.json();
+                                updateFollowStatus(data.follow_active);
+                        } catch (e) { }
+                }, 3000);
 
-        setInterval(updatePersonStatus, 5000);
+                setInterval(updatePersonStatus, 5000);
 
-        // Init
-        initMicrophone();
-        updatePersonStatus();
+                // Init
+                initMicrophone();
+                updatePersonStatus();
         </script>
 </body>
 
 </html>
+
