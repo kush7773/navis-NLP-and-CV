@@ -9,6 +9,29 @@ class RobotMouth:
             self.engine = pyttsx3.init()
             self.engine.setProperty('rate', 150)
             self.engine.setProperty('volume', 1.0)
+            
+            # Find and set a male voice
+            voices = self.engine.getProperty('voices')
+            male_voice_found = False
+            
+            for voice in voices:
+                voice_id_lower = voice.id.lower()
+                voice_name_lower = voice.name.lower()
+                # Check gender metadata or common male names/identifiers
+                if (hasattr(voice, 'gender') and voice.gender == 'male') or \
+                   'male' in voice_name_lower or \
+                   'david' in voice_id_lower or \
+                   'alex' in voice_id_lower:
+                    self.engine.setProperty('voice', voice.id)
+                    male_voice_found = True
+                    print(f"✅ TTS selected male voice: {voice.name}")
+                    break
+            
+            if not male_voice_found and len(voices) > 0:
+                # Default to the first voice typically male in SAPI5/espeak
+                self.engine.setProperty('voice', voices[0].id)
+                print(f"⚠️ Male voice not explicitly found, defaulting to: {voices[0].name}")
+                
         except Exception as e:
             print(f"⚠️ TTS Init Error: {e}")
 
