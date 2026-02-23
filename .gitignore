@@ -31,3 +31,7 @@ target_person.pkl
 # Artifacts (local only)
 .gemini/
 brain/
+
+# SSL Certificates
+cert.pem
+key.pem

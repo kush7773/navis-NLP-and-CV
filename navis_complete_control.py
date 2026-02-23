@@ -82,6 +82,7 @@ from config import (
     STOP_COMMANDS,
     RASPBERRY_PI_IP,
     SERIAL_PORT,
+    MEGA_PORT,
     SERIAL_BAUD,
     MANUAL_SPEED,
     AUTO_SPEED,
@@ -110,7 +111,7 @@ except Exception as e:
 
 try:
     if RobotBridge:
-        bot = RobotBridge(port=SERIAL_PORT, baud_rate=SERIAL_BAUD)
+        bot = RobotBridge(esp32_port=SERIAL_PORT, mega_port=MEGA_PORT, baud_rate=SERIAL_BAUD)
         print("✅ Motor bridge initialized")
 except Exception as e:
     print(f"⚠️ Motor bridge init failed: {e}")
@@ -947,7 +948,13 @@ if __name__ == '__main__':
     print(f"\n{'='*60}\n")
     
     try:
-        app.run(host='0.0.0.0', port=8080, debug=False, threaded=True)
+        import os
+        if os.path.exists('cert.pem') and os.path.exists('key.pem'):
+            print("🔒 Starting server with HTTPS (https://{RPI_IP}:8080)")
+            app.run(host='0.0.0.0', port=8080, debug=False, threaded=True, ssl_context=('cert.pem', 'key.pem'))
+        else:
+            print("🔓 Starting server with HTTP")
+            app.run(host='0.0.0.0', port=8080, debug=False, threaded=True)
     finally:
         if bot:
             bot.close()
