@@ -70,7 +70,7 @@ try:
 except ImportError:
     print("⚠️ face_recognition_utils not available")
     save_target_encoding = None
-    load_target_encoding = lambda: ({}, "")
+    def load_target_encoding(): return {}, ""
     generate_face_encoding = None
     match_target_person = None
     detect_and_match_faces = None
@@ -168,6 +168,17 @@ def generate_frames():
     body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
     upper_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_upperbody.xml')
     
+    frame_count = 0
+    process_every_n_frames = 3
+    
+    # Cache variables for skipped frames
+    cached_faces = []
+    cached_humans = []
+    cached_target_found = False
+    cached_target_x = 0
+    cached_target_w = 0
+    cached_detected_human = False
+    
     while True:
         if not cap:
             break
@@ -179,47 +190,70 @@ def generate_frames():
         # Fix inverted camera — flip horizontally (mirror)
         frame = cv2.flip(frame, 1)
         
+        
         frame_height, frame_width = frame.shape[:2]
         frame_center_x = frame_width // 2
         
-        detected_human = False
-        target_x = frame_center_x
-        target_w = 0
         distance_status = ""
         distance_color = (255, 255, 255)
         
-        if show_face_detection or follow_mode_active:
+        # Only process every N frames
+        if frame_count % process_every_n_frames == 0:
+            cached_detected_human = False
+            cached_target_x = frame_center_x
+            cached_target_w = 0
+            cached_faces = []
+            cached_humans = []
+            cached_target_found = False
             
-            if len(target_person_encodings) > 0:
-                face_results = detect_and_match_faces(frame, target_person_encodings, match_threshold)
+            # Create a downscaled frame for faster processing
+            scale_factor = 0.25  # Process at 1/4 resolution
+            small_frame = cv2.resize(frame, (0, 0), fx=scale_factor, fy=scale_factor)
+            
+            if show_face_detection or follow_mode_active:
                 
-                target_found = False
-                
-                for result in face_results:
-                    x, y, w, h = result['bbox']
-                    is_target = result['is_target']
-                    confidence = result['confidence']
-                    matched_view = result['matched_view']
+                if len(target_person_encodings) > 0:
+                    face_results = detect_and_match_faces(small_frame, target_person_encodings, match_threshold)
                     
-                    if is_target:
-                        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
-                        label = f"TARGET ({confidence:.2f})"
-                        if matched_view:
-                            label += f" - {matched_view.upper()}"
-                        cv2.putText(frame, label, (x, y-10),
-                                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    for result in face_results:
+                        # Scale bounding boxes back up
+                        x, y, w, h = [int(v / scale_factor) for v in result['bbox']]
+                        is_target = result['is_target']
+                        confidence = result['confidence']
+                        matched_view = result['matched_view']
                         
-                        target_x = x + w // 2
-                        target_w = w
-                        target_found = True
-                        detected_human = True
-                    else:
-                        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                        cv2.putText(frame, f"OTHER ({confidence:.2f})", (x, y-10),
-                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                        cached_faces.append((x, y, w, h, is_target, confidence, matched_view))
+                        
+                        if is_target:
+                            cached_target_x = x + w // 2
+                            cached_target_w = w
+                            cached_target_found = True
+                            cached_detected_human = True
+                    
+                    if not cached_target_found:
+                        gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+                        
+                        faces = face_cascade.detectMultiScale(gray, 1.2, 5)
+                        upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
+                        full_bodies = body_cascade.detectMultiScale(gray, 1.1, 3)
+                        
+                        humans = []
+                        if len(faces) > 0:
+                            humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "FACE") for (x, y, w, h) in faces]
+                        elif len(upper_bodies) > 0:
+                            humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "UPPER BODY") for (x, y, w, h) in upper_bodies]
+                        elif len(full_bodies) > 0:
+                            humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "FULL BODY") for (x, y, w, h) in full_bodies]
+                        
+                        cached_humans = humans
+                        for (x, y, w, h, label) in humans:
+                            if w > cached_target_w:
+                                cached_target_x = x + w // 2
+                                cached_target_w = w
+                                cached_detected_human = True
                 
-                if not target_found:
-                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                else:
+                    gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
                     
                     faces = face_cascade.detectMultiScale(gray, 1.2, 5)
                     upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
@@ -227,43 +261,47 @@ def generate_frames():
                     
                     humans = []
                     if len(faces) > 0:
-                        humans = [(x, y, w, h, "FACE") for (x, y, w, h) in faces]
+                        humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "FACE") for (x, y, w, h) in faces]
                     elif len(upper_bodies) > 0:
-                        humans = [(x, y, w, h, "UPPER BODY") for (x, y, w, h) in upper_bodies]
+                        humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "UPPER BODY") for (x, y, w, h) in upper_bodies]
                     elif len(full_bodies) > 0:
-                        humans = [(x, y, w, h, "FULL BODY") for (x, y, w, h) in full_bodies]
+                        humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "FULL BODY") for (x, y, w, h) in full_bodies]
                     
+                    cached_humans = humans
                     for (x, y, w, h, label) in humans:
-                        if w > target_w:
-                            target_x = x + w // 2
-                            target_w = w
-                            detected_human = True
-                            
-                            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 255), 2)
-                            cv2.putText(frame, f"{label} (TRACKING)", (x, y-10),
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-            
-            else:
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                
-                faces = face_cascade.detectMultiScale(gray, 1.2, 5)
-                upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
-                full_bodies = body_cascade.detectMultiScale(gray, 1.1, 3)
-                
-                humans = []
-                if len(faces) > 0:
-                    humans = [(x, y, w, h, "FACE") for (x, y, w, h) in faces]
-                elif len(upper_bodies) > 0:
-                    humans = [(x, y, w, h, "UPPER BODY") for (x, y, w, h) in upper_bodies]
-                elif len(full_bodies) > 0:
-                    humans = [(x, y, w, h, "FULL BODY") for (x, y, w, h) in full_bodies]
-                
-                for (x, y, w, h, label) in humans:
-                    detected_human = True
-                    if w > target_w:
-                        target_x = x + w // 2
-                        target_w = w
-                    
+                        cached_detected_human = True
+                        if w > cached_target_w:
+                            cached_target_x = x + w // 2
+                            cached_target_w = w
+        
+        frame_count += 1
+        
+        # Use cached values for drawing and following
+        detected_human = cached_detected_human
+        target_x = cached_target_x
+        target_w = cached_target_w
+        
+        # Draw bounding boxes from cache
+        if show_face_detection or follow_mode_active:
+            for (x, y, w, h, is_target, confidence, matched_view) in cached_faces:
+                if is_target:
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+                    label = f"TARGET ({confidence:.2f})"
+                    if matched_view:
+                        label += f" - {matched_view.upper()}"
+                    cv2.putText(frame, label, (x, y-10),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                else:
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                    cv2.putText(frame, f"OTHER ({confidence:.2f})", (x, y-10),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                               
+            for (x, y, w, h, label) in cached_humans:
+                if len(target_person_encodings) > 0 and not cached_target_found:
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 255), 2)
+                    cv2.putText(frame, f"{label} (TRACKING)", (x, y-10),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+                elif len(target_person_encodings) == 0:
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
                     cv2.putText(frame, label, (x, y-10),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)

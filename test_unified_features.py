@@ -11,27 +11,29 @@ sys.modules['llm_handler_updated'] = MagicMock()
 sys.modules['speech_recognition'] = MagicMock()
 sys.modules['pydub'] = MagicMock()
 sys.modules['cv2'] = MagicMock()
+sys.modules['face_recognition'] = MagicMock()
 sys.modules['face_recognition_utils'] = MagicMock()
 
 # Mock specific attributes
+sys.modules['face_recognition_utils'].load_target_encoding.return_value = ({}, "Unknown")
 sys.modules['cv2'].VideoCapture.return_value.isOpened.return_value = True
 sys.modules['cv2'].VideoCapture.return_value.read.return_value = (True, MagicMock())
 sys.modules['cv2'].data.haarcascades = "mock_path/"
 
 # Import the app
-from voice_follow_integration import app, check_follow_command
+from navis_complete_control import app, check_follow_command
 
 class TestNavisUnified(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
 
-    def test_health_check(self):
-        """Test health endpoint"""
-        response = self.app.get('/health')
+    def test_status_endpoint(self):
+        """Test status endpoint"""
+        response = self.app.get('/status')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertEqual(data['status'], 'online')
+        self.assertIn('robot', data)
         self.assertIn('follow_active', data)
 
     def test_manual_control(self):

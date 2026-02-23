@@ -87,19 +87,19 @@ class RobotBridge:
     # ============================================
     def left_bicep_up(self):
         """Move left bicep to up position"""
-        self.send_command("BLU")
+        self.send_command("LU")
     
     def left_bicep_down(self):
         """Move left bicep to down position"""
-        self.send_command("BLD")
+        self.send_command("LD")
     
     def right_bicep_up(self):
         """Move right bicep to up position"""
-        self.send_command("BRU")
+        self.send_command("RU")
     
     def right_bicep_down(self):
         """Move right bicep to down position"""
-        self.send_command("BRD")
+        self.send_command("RD")
     
     def stop_biceps(self):
         """Emergency stop for all bicep motors"""
