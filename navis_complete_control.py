@@ -180,6 +180,10 @@ def generate_frames():
     cached_target_w = 0
     cached_detected_human = False
     
+    # Distance Heuristics
+    KNOWN_FACE_WIDTH_CM = 15.0
+    FOCAL_LENGTH = 400.0
+    
     while True:
         if not cap:
             break
@@ -228,6 +232,13 @@ def generate_frames():
                         if is_target:
                             cached_target_x = x + w // 2
                             cached_target_w = w
+                            
+                            # Estimate Distance
+                            if w > 0:
+                                distance_cm = (KNOWN_FACE_WIDTH_CM * FOCAL_LENGTH) / w
+                            else:
+                                distance_cm = 0.0
+                                
                             cached_target_found = True
                             cached_detected_human = True
                     
@@ -287,9 +298,13 @@ def generate_frames():
             for (x, y, w, h, is_target, confidence, matched_view) in cached_faces:
                 if is_target:
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
-                    label = f"TARGET ({confidence:.2f})"
+                    
+                    # Calculate estimated distance for rendering
+                    distance_cm = (KNOWN_FACE_WIDTH_CM * FOCAL_LENGTH) / w if w > 0 else 0
+                    
+                    label = f"TARGET | Dist: {distance_cm:.1f}cm"
                     if matched_view:
-                        label += f" - {matched_view.upper()}"
+                        label += f" ({matched_view.upper()})"
                     cv2.putText(frame, label, (x, y-10),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 else:
