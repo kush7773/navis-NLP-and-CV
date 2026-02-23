@@ -61,19 +61,19 @@ class RobotBridge:
     # ============================================
     def open_left_hand(self):
         """Open left hand (all fingers)"""
-        self.send_command("LC")
+        self.send_command("LO")
     
     def close_left_hand(self):
         """Close left hand (all fingers)"""
-        self.send_command("LO")
+        self.send_command("LC")
     
     def open_right_hand(self):
         """Open right hand (all fingers)"""
-        self.send_command("RC")
+        self.send_command("RO")
     
     def close_right_hand(self):
         """Close right hand (all fingers)"""
-        self.send_command("RO")
+        self.send_command("RC")
     
     # ============================================
     #   WRIST CONTROLS
