@@ -37,8 +37,9 @@ ROBOT_CREATOR = "Team Robomanthan"
 MAX_RESPONSE_LENGTH = 100  # Maximum tokens in response (keep short for speech)
 RESPONSE_TEMPERATURE = 0.7  # 0.0 = deterministic, 1.0 = creative
 
-# Serial port for ESP32 motor controller
-SERIAL_PORT = "/dev/ttyUSB0"  # Change to /dev/ttyACM0 if needed
+# Serial ports for motor controllers
+SERIAL_PORT = "/dev/ttyUSB0"  # ESP32 Motor Controller
+MEGA_PORT = "/dev/ttyUSB1"    # Arduino Mega Hand Array
 SERIAL_BAUD = 115200
 
 # Servo settings

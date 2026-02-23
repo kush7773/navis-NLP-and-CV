@@ -154,12 +154,12 @@ void handleCommand(const String &cmd) {
     wristR.write(constrain(cmd.substring(2).toInt(), 0, 180));
 
   // LEFT (reversed)
-  else if (cmd == "BLU") { leftTarget = BICEP_UP_POS_L; leftActive = true; leftStartTime = millis(); }
-  else if (cmd == "BLD") { leftTarget = BICEP_DOWN_POS_L; leftActive = true; leftStartTime = millis(); }
+  else if (cmd == "LU") { leftTarget = BICEP_UP_POS_L; leftActive = true; leftStartTime = millis(); }
+  else if (cmd == "LD") { leftTarget = BICEP_DOWN_POS_L; leftActive = true; leftStartTime = millis(); }
 
   // RIGHT (unchanged)
-  else if (cmd == "BRU") { rightTarget = BICEP_UP_POS_R; rightActive = true; rightStartTime = millis(); }
-  else if (cmd == "BRD") { rightTarget = BICEP_DOWN_POS_R; rightActive = true; rightStartTime = millis(); }
+  else if (cmd == "RU") { rightTarget = BICEP_UP_POS_R; rightActive = true; rightStartTime = millis(); }
+  else if (cmd == "RD") { rightTarget = BICEP_DOWN_POS_R; rightActive = true; rightStartTime = millis(); }
 
   else if (cmd == "BS") {
     leftActive = rightActive = false;
