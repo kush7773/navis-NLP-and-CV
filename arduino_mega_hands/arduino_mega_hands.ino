@@ -4,17 +4,17 @@
 Servo thumbL, indexL, middleL, ringL, pinkyL, wristL;
 Servo thumbR, indexR, middleR, ringR, pinkyR, wristR;
 
-#define OPEN_ANGLE   160
-#define CLOSE_ANGLE  20
+#define OPEN_ANGLE   20
+#define CLOSE_ANGLE  160
 
 /* ---------- LEFT BICEP ---------- */
-#define EN_L   9
+#define EN_L   12
 #define IN1_L  34
 #define IN2_L  36
 #define POT_L  A0
 
 /* ---------- RIGHT BICEP ---------- */
-#define EN_R   10
+#define EN_R   13
 #define IN1_R  38
 #define IN2_R  40
 #define POT_R  A1
@@ -143,10 +143,10 @@ void closeRightHand(){ thumbR.write(CLOSE_ANGLE); indexR.write(CLOSE_ANGLE); mid
 /* ---------- COMMAND HANDLER ---------- */
 void handleCommand(const String &cmd) {
 
-  if (cmd == "LC") closeLeftHand();
-  else if (cmd == "LO") openLeftHand();
-  else if (cmd == "RC") closeRightHand();
-  else if (cmd == "RO") openRightHand();
+  if (cmd == "LC") openLeftHand();
+  else if (cmd == "LO") closeLeftHand();
+  else if (cmd == "RC") openRightHand();
+  else if (cmd == "RO") closeRightHand();
 
   else if (cmd.startsWith("WL"))
     wristL.write(constrain(cmd.substring(2).toInt(), 0, 180));
