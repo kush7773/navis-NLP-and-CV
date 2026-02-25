@@ -302,7 +302,8 @@ def generate_frames():
                     # Calculate estimated distance for rendering
                     distance_cm = (KNOWN_FACE_WIDTH_CM * FOCAL_LENGTH) / w if w > 0 else 0
                     
-                    label = f"TARGET | Dist: {distance_cm:.1f}cm"
+                    # Append raw pixel widths to allow visual calibration
+                    label = f"TARGET | Dist: {distance_cm:.1f}cm | W: {w}px"
                     if matched_view:
                         label += f" ({matched_view.upper()})"
                     cv2.putText(frame, label, (x, y-10),
@@ -328,8 +329,9 @@ def generate_frames():
             threshold = 50
             
             # Pixel width heuristics are vastly more reliable across webcams than distance_cm estimations
-            OPTIMAL_MIN_SIZE = 80   # pixels (if w < 80, they are far away -> Move forward)
-            OPTIMAL_MAX_SIZE = 160  # pixels (if w > 160, they are too close -> Move backward)
+            # Using Face cascade width, default optimal range is roughly 120px - 250px
+            OPTIMAL_MIN_SIZE = 120  # pixels (if w < 120, they are far away -> Move forward)
+            OPTIMAL_MAX_SIZE = 250  # pixels (if w > 250, they are too close -> Move backward)
             
             if target_w > OPTIMAL_MAX_SIZE:
                 # Too close! Move backward.
