@@ -327,30 +327,31 @@ def generate_frames():
             error = target_x - frame_center_x
             threshold = 50
             
-            OPTIMAL_MIN_SIZE = 80
-            OPTIMAL_MAX_SIZE = 150
-            STOP_DISTANCE = 200
+            # Use distance heuristic (distance_cm) instead of raw pixels
+            distance_cm = (KNOWN_FACE_WIDTH_CM * FOCAL_LENGTH) / target_w if target_w > 0 else 0
             
-            if target_w > STOP_DISTANCE:
-                bot.stop()
-                distance_status = "TOO CLOSE - STOPPED"
-                distance_color = (0, 0, 255)
-                
-            elif target_w > OPTIMAL_MIN_SIZE:
+            OPTIMAL_MIN_DIST = 40.0   # cm (Too close -> Move backward)
+            OPTIMAL_MAX_DIST = 80.0   # cm (Too far -> Move forward)
+            
+            if distance_cm < OPTIMAL_MIN_DIST:
+                # Too close! Move backward.
                 if abs(error) < threshold:
-                    bot.stop()
-                    distance_status = "OPTIMAL - CENTERED"
-                    distance_color = (0, 255, 0)
+                    bot.drive(-AUTO_SPEED, -AUTO_SPEED)
+                    distance_status = "TOO CLOSE - REVERSING"
+                    distance_color = (0, 0, 255)
                 elif error > 0:
-                    bot.drive(-TURN_SPEED, TURN_SPEED)
-                    distance_status = "TURNING RIGHT"
-                    distance_color = (255, 255, 0)
+                    # Target is on the right, but we need to reverse
+                    bot.drive(-AUTO_SPEED, -AUTO_SPEED // 2)
+                    distance_status = "REVERSE + RIGHT"
+                    distance_color = (0, 0, 255)
                 else:
-                    bot.drive(TURN_SPEED, -TURN_SPEED)
-                    distance_status = "TURNING LEFT"
-                    distance_color = (255, 255, 0)
+                    # Target is on the left, but we need to reverse
+                    bot.drive(-AUTO_SPEED // 2, -AUTO_SPEED)
+                    distance_status = "REVERSE + LEFT"
+                    distance_color = (0, 0, 255)
                     
-            elif target_w < OPTIMAL_MAX_SIZE:
+            elif distance_cm > OPTIMAL_MAX_DIST:
+                # Too far! Move forward.
                 if abs(error) < threshold:
                     bot.drive(AUTO_SPEED, AUTO_SPEED)
                     distance_status = "MOVING FORWARD"
@@ -365,6 +366,7 @@ def generate_frames():
                     distance_color = (0, 255, 255)
                     
             else:
+                # Optimal distance zone (40cm to 80cm)
                 if abs(error) < threshold:
                     bot.stop()
                     distance_status = "OPTIMAL - CENTERED"
