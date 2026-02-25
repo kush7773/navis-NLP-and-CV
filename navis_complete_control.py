@@ -327,13 +327,11 @@ def generate_frames():
             error = target_x - frame_center_x
             threshold = 50
             
-            # Use distance heuristic (distance_cm) instead of raw pixels
-            distance_cm = (KNOWN_FACE_WIDTH_CM * FOCAL_LENGTH) / target_w if target_w > 0 else 0
+            # Pixel width heuristics are vastly more reliable across webcams than distance_cm estimations
+            OPTIMAL_MIN_SIZE = 80   # pixels (if w < 80, they are far away -> Move forward)
+            OPTIMAL_MAX_SIZE = 160  # pixels (if w > 160, they are too close -> Move backward)
             
-            OPTIMAL_MIN_DIST = 40.0   # cm (Too close -> Move backward)
-            OPTIMAL_MAX_DIST = 80.0   # cm (Too far -> Move forward)
-            
-            if distance_cm < OPTIMAL_MIN_DIST:
+            if target_w > OPTIMAL_MAX_SIZE:
                 # Too close! Move backward.
                 if abs(error) < threshold:
                     bot.drive(-AUTO_SPEED, -AUTO_SPEED)
@@ -350,7 +348,7 @@ def generate_frames():
                     distance_status = "REVERSE + LEFT"
                     distance_color = (0, 0, 255)
                     
-            elif distance_cm > OPTIMAL_MAX_DIST:
+            elif target_w < OPTIMAL_MIN_SIZE:
                 # Too far! Move forward.
                 if abs(error) < threshold:
                     bot.drive(AUTO_SPEED, AUTO_SPEED)
@@ -366,7 +364,7 @@ def generate_frames():
                     distance_color = (0, 255, 255)
                     
             else:
-                # Optimal distance zone (40cm to 80cm)
+                # Optimal distance zone (e.g. 80px to 160px)
                 if abs(error) < threshold:
                     bot.stop()
                     distance_status = "OPTIMAL - CENTERED"
