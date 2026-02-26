@@ -54,8 +54,8 @@ BASE_SPEED = 55        # Base/minimum speed (matches ESP32 BSPEED)
 
 # ===== WEB INTERFACE =====
 WEB_HOST = "0.0.0.0"  # Listen on all interfaces
-WEB_PORT = 5000       # Main web interface port (navis_hybrid.py)
-VOICE_PORT = 5000     # Voice control interface port (voice_follow_integration.py)
+WEB_PORT = 5001       # Main web interface port (navis_hybrid.py)
+VOICE_PORT = 5001     # Voice control interface port (voice_follow_integration.py)
 RASPBERRY_PI_IP = "192.168.0.182"  # Your Raspberry Pi IP address
 
 # ===== FOLLOW MODE SETTINGS =====
@@ -65,6 +65,16 @@ STOP_COMMANDS = ["stop navis", "navis stop", "stop following", "stop"]
 
 # Follow mode uses existing face tracking from navis_hybrid.py
 FOLLOW_MODE_ENABLED = True  # Enable voice-activated follow mode
+
+# ===== FOLLOW MODE TUNING =====
+# Persistence: keep tracking for N frames after losing the target (prevents jitter stops)
+PERSISTENCE_FRAMES = 10     # ~0.3s at 30fps before the robot gives up and stops
+
+# EMA Smoothing: reduces oscillation in target position (0.0 = no change, 1.0 = instant)
+SMOOTHING_ALPHA = 0.4       # Lower = smoother but slower to react
+
+# Dead zone: ignore small centering errors (pixels) to prevent micro-adjustments
+DEAD_ZONE = 40              # Pixels of error to ignore (prevents jitter turning)
 
 # ===== SPEECH SETTINGS =====
 # Vosk model path (for offline speech recognition)

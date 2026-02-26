@@ -13,6 +13,12 @@ NC='\033[0m'
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Read port from config.py
+WEB_PORT=$(python3 -c "import sys; sys.path.insert(0,'${SCRIPT_DIR}'); from config import WEB_PORT; print(WEB_PORT)" 2>/dev/null)
+if [ -z "$WEB_PORT" ]; then
+    WEB_PORT=5001
+fi
+
 echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
 echo -e "${CYAN}   🤖 NAVIS COMPLETE CONTROL INTERFACE        ${NC}"
 echo -e "${CYAN}   Robomanthan × BNMIT                        ${NC}"
@@ -55,9 +61,11 @@ else
     echo -e "${YELLOW}  ⚠ Camera: NOT DETECTED (interface will run without camera)${NC}"
 fi
 
-# Serial/ESP32
-if ls /dev/ttyUSB* 1> /dev/null 2>&1 || ls /dev/ttyACM* 1> /dev/null 2>&1; then
-    echo -e "${GREEN}  ✓ ESP32/Arduino: ONLINE${NC}"
+# Serial/ESP32 + Arduino (check static symlinks first, then fallback)
+if ls /dev/ttyESP32 1> /dev/null 2>&1 || ls /dev/ttyArduino 1> /dev/null 2>&1; then
+    echo -e "${GREEN}  ✓ ESP32/Arduino: ONLINE (static aliases)${NC}"
+elif ls /dev/ttyUSB* 1> /dev/null 2>&1 || ls /dev/ttyACM* 1> /dev/null 2>&1; then
+    echo -e "${YELLOW}  ⚠ ESP32/Arduino: Found generic ports (consider setting up static aliases)${NC}"
 else
     echo -e "${YELLOW}  ⚠ ESP32/Arduino: NOT DETECTED (motor control disabled)${NC}"
 fi
@@ -74,10 +82,20 @@ else
 fi
 
 echo -e "${GREEN}═══════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  📲 Access URL: http://${IP}:5000            ${NC}"
-echo -e "${GREEN}  📲 Local URL:  http://localhost:5000        ${NC}"
+echo -e "${GREEN}  📲 Access URL: http://${IP}:${WEB_PORT}            ${NC}"
+echo -e "${GREEN}  📲 Local URL:  http://localhost:${WEB_PORT}        ${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════${NC}"
 echo ""
+
+# Trap Ctrl+C to cleanly kill both processes
+cleanup() {
+    echo -e "\n${YELLOW}🛑 Shutting down NAVIS...${NC}"
+    kill $DISPLAY_PID 2>/dev/null
+    wait $DISPLAY_PID 2>/dev/null
+    echo -e "${GREEN}✅ All processes stopped.${NC}"
+    exit 0
+}
+trap cleanup SIGINT SIGTERM
 
 # Launch the display in the background
 echo -e "${YELLOW}[4/4] Launching UI display...${NC}"
@@ -88,5 +106,5 @@ DISPLAY_PID=$!
 echo -e "${YELLOW}      Launching core robotics application...${NC}"
 python3 "${SCRIPT_DIR}/navis_complete_control.py"
 
-# Cleanup if main app exits
+# Cleanup if main app exits normally
 kill $DISPLAY_PID 2>/dev/null

@@ -1,13 +1,27 @@
 import cv2
 import requests
 import numpy as np
+import os
 
-# Configuration
-STREAM_URL = "http://127.0.0.1:5000/video_feed"
+from config import WEB_PORT, RASPBERRY_PI_IP
+
+# Configuration — auto-detect HTTPS vs HTTP
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if os.path.exists(os.path.join(SCRIPT_DIR, 'cert.pem')):
+    STREAM_URL = f"https://127.0.0.1:{WEB_PORT}/video_feed"
+    SSL_VERIFY = False  # Self-signed cert
+else:
+    STREAM_URL = f"http://127.0.0.1:{WEB_PORT}/video_feed"
+    SSL_VERIFY = True
 WINDOW_NAME = "NAVIS VISION SYSTEM"
 
 def main():
     print(f"📡 Connecting to {STREAM_URL}...")
+    
+    # Suppress SSL warnings for self-signed certs
+    if not SSL_VERIFY:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     
     # Create borderless fullscreen window
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
@@ -18,7 +32,7 @@ def main():
     while True:
         try:
             # Open the MJPEG stream
-            stream = requests.get(STREAM_URL, stream=True, timeout=5)
+            stream = requests.get(STREAM_URL, stream=True, timeout=5, verify=SSL_VERIFY)
             if stream.status_code != 200:
                 print(f"❌ Failed to reach camera stream. Retrying in 2 seconds...")
                 time.sleep(2)

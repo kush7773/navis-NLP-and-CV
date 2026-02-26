@@ -86,7 +86,10 @@ from config import (
     SERIAL_BAUD,
     MANUAL_SPEED,
     AUTO_SPEED,
-    TURN_SPEED
+    TURN_SPEED,
+    PERSISTENCE_FRAMES,
+    SMOOTHING_ALPHA,
+    DEAD_ZONE
 )
 
 app = Flask(__name__, static_folder='static')
@@ -182,6 +185,13 @@ def generate_frames():
     cached_target_x = 0
     cached_target_w = 0
     cached_detected_human = False
+    
+    # === NEW: Smoothing & Persistence ===
+    smoothed_x = 0.0          # EMA-smoothed target X position
+    smoothed_w = 0.0          # EMA-smoothed target width
+    frames_since_seen = 999   # How many frames since we last saw the target
+    last_known_x = 0          # Last known good X position
+    last_known_w = 0          # Last known good width
     
     # Distance Heuristics
     KNOWN_FACE_WIDTH_CM = 15.0
@@ -291,10 +301,28 @@ def generate_frames():
         
         frame_count += 1
         
-        # Use cached values for drawing and following
-        detected_human = cached_detected_human
-        target_x = cached_target_x
-        target_w = cached_target_w
+        # === PERSISTENCE BUFFER & EMA SMOOTHING ===
+        if cached_detected_human:
+            # Target is visible — update smoothed values and reset persistence counter
+            frames_since_seen = 0
+            last_known_x = cached_target_x
+            last_known_w = cached_target_w
+            smoothed_x = SMOOTHING_ALPHA * cached_target_x + (1 - SMOOTHING_ALPHA) * smoothed_x
+            smoothed_w = SMOOTHING_ALPHA * cached_target_w + (1 - SMOOTHING_ALPHA) * smoothed_w
+        else:
+            frames_since_seen += 1
+            # Decay smoothed values toward center during persistence window
+            if frames_since_seen <= PERSISTENCE_FRAMES:
+                # Slowly drift toward last known position (don't snap to center)
+                smoothed_x = 0.95 * smoothed_x + 0.05 * last_known_x
+                smoothed_w = smoothed_w  # Hold width steady
+        
+        # Decide if we should "act" on detection (real detection OR within persistence window)
+        effectively_detected = cached_detected_human or (frames_since_seen <= PERSISTENCE_FRAMES)
+        
+        # Use smoothed values for motor control
+        target_x = int(smoothed_x)
+        target_w = int(smoothed_w)
         
         # Draw bounding boxes from cache
         if show_face_detection or follow_mode_active:
@@ -326,15 +354,28 @@ def generate_frames():
                     cv2.putText(frame, label, (x, y-10),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
         
-        # Follow mode motor control
-        if follow_mode_active and detected_human and bot:
+        # Follow mode motor control (using smoothed values + persistence)
+        if follow_mode_active and effectively_detected and bot:
             error = target_x - frame_center_x
-            threshold = 50
             
-            # Legacy Pixel Heuristics (matches navisrobo behavior)
-            OPTIMAL_MIN_SIZE = 80   # pixels (if w < 80, they are far away -> Move forward)
-            OPTIMAL_MAX_SIZE = 150  # pixels (if w > 150, they are too close -> STOP, never reverse auto)
-            STOP_DISTANCE = 200     # Emergency Stop
+            # === PROPORTIONAL SPEED CONTROL ===
+            # Scale turn speed proportionally to how far off-center the target is
+            max_error = frame_width // 2
+            error_ratio = min(abs(error) / max(max_error, 1), 1.0)
+            proportional_turn = int(TURN_SPEED * 0.4 + TURN_SPEED * 0.6 * error_ratio)
+            
+            # Scale forward speed inversely to target width (closer = slower)
+            # target_w: 0→far(full speed), OPTIMAL_MIN→medium, OPTIMAL_MAX→crawl
+            OPTIMAL_MIN_SIZE = 80
+            OPTIMAL_MAX_SIZE = 150
+            STOP_DISTANCE = 200
+            
+            if target_w < OPTIMAL_MIN_SIZE:
+                # Far away: scale speed based on distance
+                distance_ratio = max(0.0, 1.0 - (target_w / max(OPTIMAL_MIN_SIZE, 1)))
+                proportional_forward = int(AUTO_SPEED * 0.5 + AUTO_SPEED * 0.5 * distance_ratio)
+            else:
+                proportional_forward = int(AUTO_SPEED * 0.4)  # Crawl speed when close
             
             if target_w > STOP_DISTANCE:
                 bot.stop()
@@ -343,57 +384,57 @@ def generate_frames():
                 distance_color = (0, 0, 255)
             elif target_w > OPTIMAL_MAX_SIZE:
                 # Target is close enough, just hold orientation
-                if abs(error) < threshold:
+                if abs(error) < DEAD_ZONE:
                     bot.stop()
                     active_drive_cmd = "STOP (OPTIMAL)"
                     distance_status = "OPTIMAL - CENTERED"
                     distance_color = (0, 255, 0)
                 elif error > 0:
-                    bot.drive(-TURN_SPEED, TURN_SPEED)
+                    bot.drive(-proportional_turn, proportional_turn)
                     active_drive_cmd = "TURNING RIGHT"
                     distance_status = "TURNING RIGHT"
                     distance_color = (255, 255, 0)
                 else:
-                    bot.drive(TURN_SPEED, -TURN_SPEED)
+                    bot.drive(proportional_turn, -proportional_turn)
                     active_drive_cmd = "TURNING LEFT"
                     distance_status = "TURNING LEFT"
                     distance_color = (255, 255, 0)
             elif target_w < OPTIMAL_MIN_SIZE:
                 # Target is too far, drive to them
-                if abs(error) < threshold:
-                    bot.drive(AUTO_SPEED, AUTO_SPEED)
+                if abs(error) < DEAD_ZONE:
+                    bot.drive(proportional_forward, proportional_forward)
                     active_drive_cmd = "MOVING FORWARD"
                     distance_status = "MOVING FORWARD"
                     distance_color = (0, 255, 255)
                 elif error > 0:
-                    bot.drive(AUTO_SPEED, AUTO_SPEED // 2)
+                    bot.drive(proportional_forward, proportional_forward // 2)
                     active_drive_cmd = "FORWARD + RIGHT"
                     distance_status = "FORWARD + RIGHT"
                     distance_color = (0, 255, 255)
                 else:
-                    bot.drive(AUTO_SPEED // 2, AUTO_SPEED)
+                    bot.drive(proportional_forward // 2, proportional_forward)
                     active_drive_cmd = "FORWARD + LEFT"
                     distance_status = "FORWARD + LEFT"
                     distance_color = (0, 255, 255)
             else:
                 # Optimal distance zone (80px to 150px)
-                if abs(error) < threshold:
+                if abs(error) < DEAD_ZONE:
                     bot.stop()
                     active_drive_cmd = "STOP (OPTIMAL)"
                     distance_status = "OPTIMAL - CENTERED"
                     distance_color = (0, 255, 0)
                 elif error > 0:
-                    bot.drive(-TURN_SPEED, TURN_SPEED)
+                    bot.drive(-proportional_turn, proportional_turn)
                     active_drive_cmd = "ADJUSTING RIGHT"
                     distance_status = "ADJUSTING RIGHT"
                     distance_color = (255, 255, 0)
                 else:
-                    bot.drive(TURN_SPEED, -TURN_SPEED)
+                    bot.drive(proportional_turn, -proportional_turn)
                     active_drive_cmd = "ADJUSTING LEFT"
                     distance_status = "ADJUSTING LEFT"
                     distance_color = (255, 255, 0)
         
-        elif follow_mode_active and not detected_human and bot:
+        elif follow_mode_active and not effectively_detected and bot:
             bot.stop()
             distance_status = "SEARCHING..."
             distance_color = (255, 165, 0)
@@ -403,12 +444,17 @@ def generate_frames():
             cv2.putText(frame, "FOLLOW MODE: ON", (10, 30),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
-            if detected_human and distance_status:
+            if effectively_detected and distance_status:
                 cv2.putText(frame, distance_status, (10, 60),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, distance_color, 2)
                 distance_text = f"Distance: {target_w}px"
                 cv2.putText(frame, distance_text, (10, 90),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                # Show persistence indicator when coasting on memory
+                if not cached_detected_human and frames_since_seen > 0:
+                    persist_text = f"MEMORY ({PERSISTENCE_FRAMES - frames_since_seen} frames left)"
+                    cv2.putText(frame, persist_text, (10, 120),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 200, 0), 1)
             else:
                 cv2.putText(frame, "SEARCHING...", (10, 60),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 165, 0), 2)
@@ -422,6 +468,7 @@ def generate_frames():
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
 
 
 # ============================================
