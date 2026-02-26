@@ -132,6 +132,8 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fronta
 # Global state
 follow_mode_active = False
 show_face_detection = False
+active_drive_cmd = "STOP"
+active_arm_cmd = "IDLE"
 
 # Person-specific tracking
 target_person_encodings = {}
@@ -164,6 +166,7 @@ def check_follow_command(text):
 def generate_frames():
     """Generate video frames with face detection and follow mode"""
     global show_face_detection, follow_mode_active, target_person_encodings
+    global active_drive_cmd, active_arm_cmd
     
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
@@ -335,48 +338,58 @@ def generate_frames():
             
             if target_w > STOP_DISTANCE:
                 bot.stop()
+                active_drive_cmd = "STOP (TOO CLOSE)"
                 distance_status = "TOO CLOSE - STOPPED"
                 distance_color = (0, 0, 255)
             elif target_w > OPTIMAL_MAX_SIZE:
                 # Target is close enough, just hold orientation
                 if abs(error) < threshold:
                     bot.stop()
+                    active_drive_cmd = "STOP (OPTIMAL)"
                     distance_status = "OPTIMAL - CENTERED"
                     distance_color = (0, 255, 0)
                 elif error > 0:
                     bot.drive(-TURN_SPEED, TURN_SPEED)
+                    active_drive_cmd = "TURNING RIGHT"
                     distance_status = "TURNING RIGHT"
                     distance_color = (255, 255, 0)
                 else:
                     bot.drive(TURN_SPEED, -TURN_SPEED)
+                    active_drive_cmd = "TURNING LEFT"
                     distance_status = "TURNING LEFT"
                     distance_color = (255, 255, 0)
             elif target_w < OPTIMAL_MIN_SIZE:
                 # Target is too far, drive to them
                 if abs(error) < threshold:
                     bot.drive(AUTO_SPEED, AUTO_SPEED)
+                    active_drive_cmd = "MOVING FORWARD"
                     distance_status = "MOVING FORWARD"
                     distance_color = (0, 255, 255)
                 elif error > 0:
                     bot.drive(AUTO_SPEED, AUTO_SPEED // 2)
+                    active_drive_cmd = "FORWARD + RIGHT"
                     distance_status = "FORWARD + RIGHT"
                     distance_color = (0, 255, 255)
                 else:
                     bot.drive(AUTO_SPEED // 2, AUTO_SPEED)
+                    active_drive_cmd = "FORWARD + LEFT"
                     distance_status = "FORWARD + LEFT"
                     distance_color = (0, 255, 255)
             else:
                 # Optimal distance zone (80px to 150px)
                 if abs(error) < threshold:
                     bot.stop()
+                    active_drive_cmd = "STOP (OPTIMAL)"
                     distance_status = "OPTIMAL - CENTERED"
                     distance_color = (0, 255, 0)
                 elif error > 0:
                     bot.drive(-TURN_SPEED, TURN_SPEED)
+                    active_drive_cmd = "ADJUSTING RIGHT"
                     distance_status = "ADJUSTING RIGHT"
                     distance_color = (255, 255, 0)
                 else:
                     bot.drive(TURN_SPEED, -TURN_SPEED)
+                    active_drive_cmd = "ADJUSTING LEFT"
                     distance_status = "ADJUSTING LEFT"
                     distance_color = (255, 255, 0)
         
@@ -621,6 +634,7 @@ def status():
 @app.route('/hand_control', methods=['POST'])
 def hand_control():
     """Control robot hands (open/close)"""
+    global active_arm_cmd
     if not bot:
         return jsonify({'error': 'Robot not connected'}), 500
     
@@ -630,15 +644,19 @@ def hand_control():
     try:
         if command == 'LC':
             bot.open_left_hand()
+            active_arm_cmd = "LEFT HAND - OPENED"
             return jsonify({'success': True, 'message': 'Left hand opened'})
         elif command == 'LO':
             bot.close_left_hand()
+            active_arm_cmd = "LEFT HAND - CLOSED"
             return jsonify({'success': True, 'message': 'Left hand closed'})
         elif command == 'RC':
             bot.open_right_hand()
+            active_arm_cmd = "RIGHT HAND - OPENED"
             return jsonify({'success': True, 'message': 'Right hand opened'})
         elif command == 'RO':
             bot.close_right_hand()
+            active_arm_cmd = "RIGHT HAND - CLOSED"
             return jsonify({'success': True, 'message': 'Right hand closed'})
         else:
             return jsonify({'error': 'Invalid command'}), 400
@@ -649,6 +667,7 @@ def hand_control():
 @app.route('/wrist_control', methods=['POST'])
 def wrist_control():
     """Control robot wrists (0-180 degrees)"""
+    global active_arm_cmd
     if not bot:
         return jsonify({'error': 'Robot not connected'}), 500
     
@@ -663,9 +682,11 @@ def wrist_control():
         
         if side == 'L':
             bot.set_left_wrist(angle)
+            active_arm_cmd = f"LEFT WRIST - {angle}°"
             return jsonify({'success': True, 'message': f'Left wrist set to {angle}°'})
         elif side == 'R':
             bot.set_right_wrist(angle)
+            active_arm_cmd = f"RIGHT WRIST - {angle}°"
             return jsonify({'success': True, 'message': f'Right wrist set to {angle}°'})
         else:
             return jsonify({'error': 'Invalid side (use L or R)'}), 400
@@ -678,6 +699,7 @@ def wrist_control():
 @app.route('/bicep_control', methods=['POST'])
 def bicep_control():
     """Control robot biceps (up/down/stop)"""
+    global active_arm_cmd
     if not bot:
         return jsonify({'error': 'Robot not connected'}), 500
     
@@ -687,18 +709,23 @@ def bicep_control():
     try:
         if command == 'BLU':
             bot.left_bicep_up()
+            active_arm_cmd = "LEFT BICEP - UP"
             return jsonify({'success': True, 'message': 'Left bicep moving up'})
         elif command == 'BLD':
             bot.left_bicep_down()
+            active_arm_cmd = "LEFT BICEP - DOWN"
             return jsonify({'success': True, 'message': 'Left bicep moving down'})
         elif command == 'BRU':
             bot.right_bicep_up()
+            active_arm_cmd = "RIGHT BICEP - UP"
             return jsonify({'success': True, 'message': 'Right bicep moving up'})
         elif command == 'BRD':
             bot.right_bicep_down()
+            active_arm_cmd = "RIGHT BICEP - DOWN"
             return jsonify({'success': True, 'message': 'Right bicep moving down'})
         elif command == 'BS':
             bot.stop_biceps()
+            active_arm_cmd = "BICEPS STOPPED"
             return jsonify({'success': True, 'message': 'Biceps stopped'})
         else:
             return jsonify({'error': 'Invalid command'}), 400

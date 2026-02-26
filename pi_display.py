@@ -1,0 +1,52 @@
+import cv2
+import requests
+import numpy as np
+
+# Configuration
+STREAM_URL = "http://127.0.0.1:8080/video_feed"
+WINDOW_NAME = "NAVIS VISION SYSTEM"
+
+def main():
+    print(f"📡 Connecting to {STREAM_URL}...")
+    
+    # Create borderless fullscreen window
+    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    
+    try:
+        # Open the MJPEG stream
+        stream = requests.get(STREAM_URL, stream=True)
+        if stream.status_code != 200:
+            print(f"❌ Failed to reach camera stream. Is the server running on 8080?")
+            return
+            
+        bytes_data = b''
+        print(f"✅ Connection Established! Press 'q' to quit.")
+        
+        for chunk in stream.iter_content(chunk_size=1024):
+            bytes_data += chunk
+            # Detect JPEG start/end flags
+            a = bytes_data.find(b'\xff\xd8')
+            b = bytes_data.find(b'\xff\xd9')
+            
+            if a != -1 and b != -1:
+                jpg = bytes_data[a:b+2]
+                bytes_data = bytes_data[b+2:]
+                
+                # Decode and display
+                frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                if frame is not None:
+                    # Enlarge it slightly to fill the screen better
+                    frame = cv2.resize(frame, (800, 600))
+                    cv2.imshow(WINDOW_NAME, frame)
+                    
+                # Break on 'q'
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+    except Exception as e:
+        print(f"⚠️ Stream Error: {e}")
+    finally:
+        cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    main()
