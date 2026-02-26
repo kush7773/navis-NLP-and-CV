@@ -79,5 +79,14 @@ echo -e "${GREEN}  📲 Local URL:  http://localhost:5000        ${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════${NC}"
 echo ""
 
+# Launch the display in the background
+echo -e "${YELLOW}[4/4] Launching UI display...${NC}"
+python3 "${SCRIPT_DIR}/pi_display.py" &
+DISPLAY_PID=$!
+
 # Launch the application
+echo -e "${YELLOW}      Launching core robotics application...${NC}"
 python3 "${SCRIPT_DIR}/navis_complete_control.py"
+
+# Cleanup if main app exits
+kill $DISPLAY_PID 2>/dev/null

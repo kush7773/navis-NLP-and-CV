@@ -38,8 +38,8 @@ MAX_RESPONSE_LENGTH = 100  # Maximum tokens in response (keep short for speech)
 RESPONSE_TEMPERATURE = 0.7  # 0.0 = deterministic, 1.0 = creative
 
 # Serial ports for motor controllers
-SERIAL_PORT = "/dev/ttyUSB0"  # ESP32 Motor Controller
-MEGA_PORT = "/dev/ttyUSB1"    # Arduino Mega Hand Array
+SERIAL_PORT = "/dev/ttyESP32"  # ESP32 Motor Controller
+MEGA_PORT = "/dev/ttyArduino"    # Arduino Mega Hand Array
 SERIAL_BAUD = 115200
 
 # Servo settings

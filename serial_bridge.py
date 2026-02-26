@@ -2,7 +2,7 @@ import serial
 import time
 
 class RobotBridge:
-    def __init__(self, esp32_port='/dev/ttyUSB0', mega_port='/dev/ttyUSB1', baud_rate=115200):
+    def __init__(self, esp32_port='/dev/ttyESP32', mega_port='/dev/ttyArduino', baud_rate=115200):
         self.esp32_ser = None
         self.mega_ser = None
         self.esp32_port = esp32_port

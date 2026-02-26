@@ -39,7 +39,7 @@ RESPONSE_TEMPERATURE = 0.7  # 0.0 = deterministic, 1.0 = creative
 
 # ===== HARDWARE SETTINGS =====
 # Serial port for ESP32 motor controller
-SERIAL_PORT = "/dev/ttyUSB0"  # Change to /dev/ttyACM0 if needed
+SERIAL_PORT = "/dev/ttyESP32"  # Change to /dev/ttyArduino if needed
 SERIAL_BAUD = 115200
 
 # Servo settings
