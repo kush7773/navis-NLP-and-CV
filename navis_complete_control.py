@@ -977,10 +977,11 @@ def reload_training():
 # ============================================
 
 if __name__ == '__main__':
+    from config import WEB_PORT, WEB_HOST
     print(f"\n{'='*60}")
     print(f"🤖 {ROBOT_NAME} Complete Control Interface")
     print(f"{'='*60}")
-    print(f"\n📱 Access: http://{RASPBERRY_PI_IP}:8080")
+    print(f"\n📱 Access: http://{RASPBERRY_PI_IP}:{WEB_PORT}")
     print(f"\n✨ Features:")
     print(f"   📹 Live Camera Feed")
     print(f"   🎤 Voice Control")
@@ -994,11 +995,11 @@ if __name__ == '__main__':
     try:
         import os
         if os.path.exists('cert.pem') and os.path.exists('key.pem'):
-            print("🔒 Starting server with HTTPS (https://{RPI_IP}:8080)")
-            app.run(host='0.0.0.0', port=8080, debug=False, threaded=True, ssl_context=('cert.pem', 'key.pem'))
+            print(f"🔒 Starting server with HTTPS (https://{RASPBERRY_PI_IP}:{WEB_PORT})")
+            app.run(host=WEB_HOST, port=WEB_PORT, debug=False, threaded=True, ssl_context=('cert.pem', 'key.pem'))
         else:
-            print("🔓 Starting server with HTTP")
-            app.run(host='0.0.0.0', port=8080, debug=False, threaded=True)
+            print(f"🔓 Starting server with HTTP (http://{RASPBERRY_PI_IP}:{WEB_PORT})")
+            app.run(host=WEB_HOST, port=WEB_PORT, debug=False, threaded=True)
     finally:
         if bot:
             bot.close()
