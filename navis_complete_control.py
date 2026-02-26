@@ -89,7 +89,9 @@ from config import (
     TURN_SPEED,
     PERSISTENCE_FRAMES,
     SMOOTHING_ALPHA,
-    DEAD_ZONE
+    DEAD_ZONE,
+    HYSTERESIS_ZONE,
+    MIN_FRAMES_BETWEEN_DIR_CHANGE
 )
 
 app = Flask(__name__, static_folder='static')
@@ -186,12 +188,15 @@ def generate_frames():
     cached_target_w = 0
     cached_detected_human = False
     
-    # === NEW: Smoothing & Persistence ===
-    smoothed_x = 0.0          # EMA-smoothed target X position
-    smoothed_w = 0.0          # EMA-smoothed target width
-    frames_since_seen = 999   # How many frames since we last saw the target
-    last_known_x = 0          # Last known good X position
-    last_known_w = 0          # Last known good width
+    # === Smoothing, Persistence, Hysteresis ===
+    smoothed_x = 0.0            # EMA-smoothed target X position
+    smoothed_w = 0.0            # EMA-smoothed target width
+    frames_since_seen = 999     # How many frames since we last saw the target
+    last_known_x = 0            # Last known good X position
+    last_known_w = 0            # Last known good width
+    current_turn_dir = 0        # -1=LEFT, 0=STOPPED, 1=RIGHT (for hysteresis)
+    frames_since_dir_change = 0 # Rate limiter: frames since last motor direction change
+    last_motor_cmd = ""         # Tracks last command to avoid redundant serial writes
     
     # Distance Heuristics
     KNOWN_FACE_WIDTH_CM = 15.0
@@ -354,88 +359,145 @@ def generate_frames():
                     cv2.putText(frame, label, (x, y-10),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
         
-        # Follow mode motor control (using smoothed values + persistence)
+        # Follow mode motor control (with hysteresis + rate limiting)
+        frames_since_dir_change += 1
+        
         if follow_mode_active and effectively_detected and bot:
             error = target_x - frame_center_x
             
             # === PROPORTIONAL SPEED CONTROL ===
-            # Scale turn speed proportionally to how far off-center the target is
             max_error = frame_width // 2
             error_ratio = min(abs(error) / max(max_error, 1), 1.0)
-            proportional_turn = int(TURN_SPEED * 0.4 + TURN_SPEED * 0.6 * error_ratio)
+            # Minimum turn is 25% of TURN_SPEED (gentler minimum)
+            proportional_turn = int(TURN_SPEED * 0.25 + TURN_SPEED * 0.75 * error_ratio)
             
-            # Scale forward speed inversely to target width (closer = slower)
-            # target_w: 0→far(full speed), OPTIMAL_MIN→medium, OPTIMAL_MAX→crawl
             OPTIMAL_MIN_SIZE = 80
             OPTIMAL_MAX_SIZE = 150
             STOP_DISTANCE = 200
             
             if target_w < OPTIMAL_MIN_SIZE:
-                # Far away: scale speed based on distance
                 distance_ratio = max(0.0, 1.0 - (target_w / max(OPTIMAL_MIN_SIZE, 1)))
-                proportional_forward = int(AUTO_SPEED * 0.5 + AUTO_SPEED * 0.5 * distance_ratio)
+                proportional_forward = int(AUTO_SPEED * 0.4 + AUTO_SPEED * 0.6 * distance_ratio)
             else:
-                proportional_forward = int(AUTO_SPEED * 0.4)  # Crawl speed when close
+                proportional_forward = int(AUTO_SPEED * 0.3)
             
+            # === HYSTERESIS LOGIC ===
+            # Determine desired turn direction with hysteresis
+            if current_turn_dir == 0:
+                # Currently stopped — only START turning if error exceeds DEAD_ZONE
+                if error > DEAD_ZONE:
+                    desired_dir = 1   # RIGHT
+                elif error < -DEAD_ZONE:
+                    desired_dir = -1  # LEFT
+                else:
+                    desired_dir = 0   # CENTERED
+            else:
+                # Currently turning — only STOP if error drops below HYSTERESIS_ZONE
+                if abs(error) < HYSTERESIS_ZONE:
+                    desired_dir = 0   # Close enough, stop turning
+                elif error > 0:
+                    desired_dir = 1
+                else:
+                    desired_dir = -1
+            
+            # === RATE LIMITER ===
+            # Block direction changes if too soon (prevents rapid flip-flop)
+            if desired_dir != current_turn_dir:
+                if frames_since_dir_change < MIN_FRAMES_BETWEEN_DIR_CHANGE:
+                    desired_dir = current_turn_dir  # Force keep current direction
+                else:
+                    current_turn_dir = desired_dir
+                    frames_since_dir_change = 0
+            
+            # === EXECUTE MOTOR COMMAND ===
+            new_cmd = ""
             if target_w > STOP_DISTANCE:
-                bot.stop()
+                new_cmd = "STOP_CLOSE"
+                if new_cmd != last_motor_cmd:
+                    bot.stop()
                 active_drive_cmd = "STOP (TOO CLOSE)"
                 distance_status = "TOO CLOSE - STOPPED"
                 distance_color = (0, 0, 255)
+                current_turn_dir = 0
+                
             elif target_w > OPTIMAL_MAX_SIZE:
-                # Target is close enough, just hold orientation
-                if abs(error) < DEAD_ZONE:
-                    bot.stop()
+                # Close enough — just orient
+                if desired_dir == 0:
+                    new_cmd = "STOP_OPTIMAL"
+                    if new_cmd != last_motor_cmd:
+                        bot.stop()
                     active_drive_cmd = "STOP (OPTIMAL)"
                     distance_status = "OPTIMAL - CENTERED"
                     distance_color = (0, 255, 0)
-                elif error > 0:
-                    bot.drive(-proportional_turn, proportional_turn)
+                elif desired_dir == 1:
+                    new_cmd = f"TURN_R_{proportional_turn}"
+                    if new_cmd != last_motor_cmd:
+                        bot.drive(-proportional_turn, proportional_turn)
                     active_drive_cmd = "TURNING RIGHT"
                     distance_status = "TURNING RIGHT"
                     distance_color = (255, 255, 0)
                 else:
-                    bot.drive(proportional_turn, -proportional_turn)
+                    new_cmd = f"TURN_L_{proportional_turn}"
+                    if new_cmd != last_motor_cmd:
+                        bot.drive(proportional_turn, -proportional_turn)
                     active_drive_cmd = "TURNING LEFT"
                     distance_status = "TURNING LEFT"
                     distance_color = (255, 255, 0)
+                    
             elif target_w < OPTIMAL_MIN_SIZE:
-                # Target is too far, drive to them
-                if abs(error) < DEAD_ZONE:
-                    bot.drive(proportional_forward, proportional_forward)
+                # Far away — drive forward with steering
+                if desired_dir == 0:
+                    new_cmd = f"FWD_{proportional_forward}"
+                    if new_cmd != last_motor_cmd:
+                        bot.drive(proportional_forward, proportional_forward)
                     active_drive_cmd = "MOVING FORWARD"
                     distance_status = "MOVING FORWARD"
                     distance_color = (0, 255, 255)
-                elif error > 0:
-                    bot.drive(proportional_forward, proportional_forward // 2)
+                elif desired_dir == 1:
+                    new_cmd = f"FWD_R_{proportional_forward}"
+                    if new_cmd != last_motor_cmd:
+                        bot.drive(proportional_forward, proportional_forward // 2)
                     active_drive_cmd = "FORWARD + RIGHT"
                     distance_status = "FORWARD + RIGHT"
                     distance_color = (0, 255, 255)
                 else:
-                    bot.drive(proportional_forward // 2, proportional_forward)
+                    new_cmd = f"FWD_L_{proportional_forward}"
+                    if new_cmd != last_motor_cmd:
+                        bot.drive(proportional_forward // 2, proportional_forward)
                     active_drive_cmd = "FORWARD + LEFT"
                     distance_status = "FORWARD + LEFT"
                     distance_color = (0, 255, 255)
             else:
-                # Optimal distance zone (80px to 150px)
-                if abs(error) < DEAD_ZONE:
-                    bot.stop()
+                # Optimal distance zone
+                if desired_dir == 0:
+                    new_cmd = "STOP_ZONE"
+                    if new_cmd != last_motor_cmd:
+                        bot.stop()
                     active_drive_cmd = "STOP (OPTIMAL)"
                     distance_status = "OPTIMAL - CENTERED"
                     distance_color = (0, 255, 0)
-                elif error > 0:
-                    bot.drive(-proportional_turn, proportional_turn)
+                elif desired_dir == 1:
+                    new_cmd = f"ADJ_R_{proportional_turn}"
+                    if new_cmd != last_motor_cmd:
+                        bot.drive(-proportional_turn, proportional_turn)
                     active_drive_cmd = "ADJUSTING RIGHT"
                     distance_status = "ADJUSTING RIGHT"
                     distance_color = (255, 255, 0)
                 else:
-                    bot.drive(proportional_turn, -proportional_turn)
+                    new_cmd = f"ADJ_L_{proportional_turn}"
+                    if new_cmd != last_motor_cmd:
+                        bot.drive(proportional_turn, -proportional_turn)
                     active_drive_cmd = "ADJUSTING LEFT"
                     distance_status = "ADJUSTING LEFT"
                     distance_color = (255, 255, 0)
+            
+            last_motor_cmd = new_cmd
         
         elif follow_mode_active and not effectively_detected and bot:
-            bot.stop()
+            if last_motor_cmd != "SEARCH_STOP":
+                bot.stop()
+                last_motor_cmd = "SEARCH_STOP"
+            current_turn_dir = 0
             distance_status = "SEARCHING..."
             distance_color = (255, 165, 0)
         

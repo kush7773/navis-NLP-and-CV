@@ -68,13 +68,22 @@ FOLLOW_MODE_ENABLED = True  # Enable voice-activated follow mode
 
 # ===== FOLLOW MODE TUNING =====
 # Persistence: keep tracking for N frames after losing the target (prevents jitter stops)
-PERSISTENCE_FRAMES = 10     # ~0.3s at 30fps before the robot gives up and stops
+PERSISTENCE_FRAMES = 15     # ~0.5s at 30fps before the robot gives up and stops
 
 # EMA Smoothing: reduces oscillation in target position (0.0 = no change, 1.0 = instant)
-SMOOTHING_ALPHA = 0.4       # Lower = smoother but slower to react
+# IMPORTANT: Haar cascade at 1/4 resolution produces ±40-80px noise.
+# Keep this LOW (0.1-0.2) to filter out detection jitter.
+SMOOTHING_ALPHA = 0.15      # Lower = smoother but slower to react
 
 # Dead zone: ignore small centering errors (pixels) to prevent micro-adjustments
-DEAD_ZONE = 40              # Pixels of error to ignore (prevents jitter turning)
+# This MUST be larger than the detection noise floor (~60px for Haar at 0.25x)
+DEAD_ZONE = 70              # Pixels of error to ignore (prevents jitter turning)
+
+# Hysteresis band: once turning, only stop when error drops below this (prevents flip-flop)
+HYSTERESIS_ZONE = 30        # Must be < DEAD_ZONE. Robot keeps turning until error < this
+
+# Motor command rate limit: minimum frames between direction changes
+MIN_FRAMES_BETWEEN_DIR_CHANGE = 5  # Prevents rapid LEFT→RIGHT→LEFT oscillation
 
 # ===== SPEECH SETTINGS =====
 # Vosk model path (for offline speech recognition)
