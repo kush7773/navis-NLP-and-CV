@@ -328,30 +328,31 @@ def generate_frames():
             error = target_x - frame_center_x
             threshold = 50
             
-            # Pixel width heuristics are vastly more reliable across webcams than distance_cm estimations
-            # Using Face cascade width, default optimal range is roughly 120px - 250px
-            OPTIMAL_MIN_SIZE = 120  # pixels (if w < 120, they are far away -> Move forward)
-            OPTIMAL_MAX_SIZE = 250  # pixels (if w > 250, they are too close -> Move backward)
+            # Legacy Pixel Heuristics (matches navisrobo behavior)
+            OPTIMAL_MIN_SIZE = 80   # pixels (if w < 80, they are far away -> Move forward)
+            OPTIMAL_MAX_SIZE = 150  # pixels (if w > 150, they are too close -> STOP, never reverse auto)
+            STOP_DISTANCE = 200     # Emergency Stop
             
-            if target_w > OPTIMAL_MAX_SIZE:
-                # Too close! Move backward.
+            if target_w > STOP_DISTANCE:
+                bot.stop()
+                distance_status = "TOO CLOSE - STOPPED"
+                distance_color = (0, 0, 255)
+            elif target_w > OPTIMAL_MAX_SIZE:
+                # Target is close enough, just hold orientation
                 if abs(error) < threshold:
-                    bot.drive(-AUTO_SPEED, -AUTO_SPEED)
-                    distance_status = "TOO CLOSE - REVERSING"
-                    distance_color = (0, 0, 255)
+                    bot.stop()
+                    distance_status = "OPTIMAL - CENTERED"
+                    distance_color = (0, 255, 0)
                 elif error > 0:
-                    # Target is on the right, but we need to reverse
-                    bot.drive(-AUTO_SPEED, -AUTO_SPEED // 2)
-                    distance_status = "REVERSE + RIGHT"
-                    distance_color = (0, 0, 255)
+                    bot.drive(-TURN_SPEED, TURN_SPEED)
+                    distance_status = "TURNING RIGHT"
+                    distance_color = (255, 255, 0)
                 else:
-                    # Target is on the left, but we need to reverse
-                    bot.drive(-AUTO_SPEED // 2, -AUTO_SPEED)
-                    distance_status = "REVERSE + LEFT"
-                    distance_color = (0, 0, 255)
-                    
+                    bot.drive(TURN_SPEED, -TURN_SPEED)
+                    distance_status = "TURNING LEFT"
+                    distance_color = (255, 255, 0)
             elif target_w < OPTIMAL_MIN_SIZE:
-                # Too far! Move forward.
+                # Target is too far, drive to them
                 if abs(error) < threshold:
                     bot.drive(AUTO_SPEED, AUTO_SPEED)
                     distance_status = "MOVING FORWARD"
@@ -364,9 +365,8 @@ def generate_frames():
                     bot.drive(AUTO_SPEED // 2, AUTO_SPEED)
                     distance_status = "FORWARD + LEFT"
                     distance_color = (0, 255, 255)
-                    
             else:
-                # Optimal distance zone (e.g. 80px to 160px)
+                # Optimal distance zone (80px to 150px)
                 if abs(error) < threshold:
                     bot.stop()
                     distance_status = "OPTIMAL - CENTERED"
