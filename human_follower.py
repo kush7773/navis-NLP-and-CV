@@ -35,6 +35,22 @@ class RobotBridge:
             except Exception as e:
                 print(f"?? Serial Write Error: {e}")
 
+    def forward(self, speed=100):
+        """Move forward (both wheels same positive speed)"""
+        self.drive(speed, speed)
+
+    def backward(self, speed=100):
+        """Move backward (both wheels same negative speed)"""
+        self.drive(-speed, -speed)
+
+    def turn_left(self, speed=80):
+        """Rotate left in place"""
+        self.drive(-speed, speed)
+
+    def turn_right(self, speed=80):
+        """Rotate right in place"""
+        self.drive(speed, -speed)
+
     def stop(self):
         self.drive(0, 0)
 
