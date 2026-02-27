@@ -86,13 +86,73 @@ from config import (
     SERIAL_BAUD,
     MANUAL_SPEED,
     AUTO_SPEED,
-    TURN_SPEED,
-    PERSISTENCE_FRAMES,
-    SMOOTHING_ALPHA,
-    DEAD_ZONE,
-    HYSTERESIS_ZONE,
-    MIN_FRAMES_BETWEEN_DIR_CHANGE
+    TURN_SPEED
 )
+
+# --- MediaPipe Pose Tracker (from working reference) ---
+try:
+    import mediapipe as mp
+
+    class PoseTracker:
+        def __init__(self):
+            self.mp_holistic = mp.solutions.holistic
+            self.mp_drawing = mp.solutions.drawing_utils
+            self.holistic = self.mp_holistic.Holistic(
+                static_image_mode=False,
+                model_complexity=0,
+                smooth_landmarks=True,
+                min_detection_confidence=0.4,
+                min_tracking_confidence=0.4
+            )
+
+        def analyze_pose(self, frame):
+            """Returns: (position, depth, distance_cm, results)"""
+            h, w, c = frame.shape
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = self.holistic.process(frame_rgb)
+
+            if not results.pose_landmarks:
+                return None, None, None, results
+
+            landmarks = results.pose_landmarks.landmark
+            nose = landmarks[0]
+            left_shoulder = landmarks[11]
+            right_shoulder = landmarks[12]
+
+            if nose.visibility < 0.5:
+                return None, None, None, results
+
+            # Horizontal position
+            CENTER_TOLERANCE = 0.15
+            if nose.x < (0.5 - CENTER_TOLERANCE):
+                position = 'left'
+            elif nose.x > (0.5 + CENTER_TOLERANCE):
+                position = 'right'
+            else:
+                position = 'center'
+
+            # Depth from shoulder width
+            if left_shoulder.visibility > 0.5 and right_shoulder.visibility > 0.5:
+                shoulder_width = abs(right_shoulder.x - left_shoulder.x)
+            else:
+                shoulder_width = 0.3
+
+            est_dist_cm = 16.0 / shoulder_width if shoulder_width > 0 else 100.0
+
+            if est_dist_cm < 18:
+                depth = 'near'
+            elif est_dist_cm > 28:
+                depth = 'far'
+            else:
+                depth = 'medium'
+
+            return position, depth, est_dist_cm, results
+
+    pose_tracker = PoseTracker()
+    print("✅ MediaPipe Pose Tracker initialized")
+except (ImportError, AttributeError, Exception) as e:
+    print(f"⚠️ MediaPipe not available ({e}) — follow mode will use Haar cascade fallback")
+    pose_tracker = None
 
 app = Flask(__name__, static_folder='static')
 
@@ -131,8 +191,8 @@ except:
     camera_available = False
     cap = None
 
-# Face detection
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+# Face detection (Haar cascade for identity check only)
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml') if cv2 else None
 
 # Global state
 follow_mode_active = False
@@ -153,7 +213,6 @@ if saved_encodings and len(saved_encodings) > 0:
     print(f"✅ Loaded saved person: {target_person_name}")
 
 
-
 def check_follow_command(text):
     """Check if text contains follow or stop command"""
     text_lower = text.lower()
@@ -169,368 +228,144 @@ def check_follow_command(text):
     return None
 
 def generate_frames():
-    """Generate video frames with face detection and follow mode"""
+    """Video streaming with MediaPipe Pose tracking (from working reference)"""
     global show_face_detection, follow_mode_active, target_person_encodings
     global active_drive_cmd, active_arm_cmd
     
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
-    upper_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_upperbody.xml')
+    import time as _time
     
     frame_count = 0
-    process_every_n_frames = 3
-    
-    # Cache variables for skipped frames
-    cached_faces = []
-    cached_humans = []
-    cached_target_found = False
-    cached_target_x = 0
-    cached_target_w = 0
-    cached_detected_human = False
-    
-    # === Smoothing, Persistence, Hysteresis ===
-    smoothed_x = 0.0            # EMA-smoothed target X position
-    smoothed_w = 0.0            # EMA-smoothed target width
-    frames_since_seen = 999     # How many frames since we last saw the target
-    last_known_x = 0            # Last known good X position
-    last_known_w = 0            # Last known good width
-    current_turn_dir = 0        # -1=LEFT, 0=STOPPED, 1=RIGHT (for hysteresis)
-    frames_since_dir_change = 0 # Rate limiter: frames since last motor direction change
-    last_motor_cmd = ""         # Tracks last command to avoid redundant serial writes
-    
-    # Distance Heuristics
-    KNOWN_FACE_WIDTH_CM = 15.0
-    FOCAL_LENGTH = 400.0
+    last_driving_command = "STOP"
+    last_face_seen_time = 0
+    is_target_provisional = False
     
     while True:
         if not cap:
             break
-            
         ret, frame = cap.read()
         if not ret:
             break
         
-        # Fix inverted camera — flip horizontally (mirror)
         frame = cv2.flip(frame, 1)
-        
-        
         frame_height, frame_width = frame.shape[:2]
-        frame_center_x = frame_width // 2
-        
-        distance_status = ""
-        distance_color = (255, 255, 255)
-        
-        # Only process every N frames
-        if frame_count % process_every_n_frames == 0:
-            cached_detected_human = False
-            cached_target_x = frame_center_x
-            cached_target_w = 0
-            cached_faces = []
-            cached_humans = []
-            cached_target_found = False
-            
-            # Create a downscaled frame for faster processing
-            scale_factor = 0.25  # Process at 1/4 resolution
-            small_frame = cv2.resize(frame, (0, 0), fx=scale_factor, fy=scale_factor)
-            
-            if show_face_detection or follow_mode_active:
-                
-                if len(target_person_encodings) > 0:
-                    face_results = detect_and_match_faces(small_frame, target_person_encodings, match_threshold)
-                    
-                    for result in face_results:
-                        # Scale bounding boxes back up
-                        x, y, w, h = [int(v / scale_factor) for v in result['bbox']]
-                        is_target = result['is_target']
-                        confidence = result['confidence']
-                        matched_view = result['matched_view']
-                        
-                        cached_faces.append((x, y, w, h, is_target, confidence, matched_view))
-                        
-                        if is_target:
-                            cached_target_x = x + w // 2
-                            cached_target_w = w
-                            
-                            # Estimate Distance
-                            if w > 0:
-                                distance_cm = (KNOWN_FACE_WIDTH_CM * FOCAL_LENGTH) / w
-                            else:
-                                distance_cm = 0.0
-                                
-                            cached_target_found = True
-                            cached_detected_human = True
-                    
-                    if not cached_target_found:
-                        gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
-                        
-                        faces = face_cascade.detectMultiScale(gray, 1.2, 5)
-                        upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
-                        full_bodies = body_cascade.detectMultiScale(gray, 1.1, 3)
-                        
-                        humans = []
-                        if len(faces) > 0:
-                            humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "FACE") for (x, y, w, h) in faces]
-                        elif len(upper_bodies) > 0:
-                            humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "UPPER BODY") for (x, y, w, h) in upper_bodies]
-                        elif len(full_bodies) > 0:
-                            humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "FULL BODY") for (x, y, w, h) in full_bodies]
-                        
-                        cached_humans = humans
-                        for (x, y, w, h, label) in humans:
-                            if w > cached_target_w:
-                                cached_target_x = x + w // 2
-                                cached_target_w = w
-                                cached_detected_human = True
-                
-                else:
-                    gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
-                    
-                    faces = face_cascade.detectMultiScale(gray, 1.2, 5)
-                    upper_bodies = upper_body_cascade.detectMultiScale(gray, 1.1, 3)
-                    full_bodies = body_cascade.detectMultiScale(gray, 1.1, 3)
-                    
-                    humans = []
-                    if len(faces) > 0:
-                        humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "FACE") for (x, y, w, h) in faces]
-                    elif len(upper_bodies) > 0:
-                        humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "UPPER BODY") for (x, y, w, h) in upper_bodies]
-                    elif len(full_bodies) > 0:
-                        humans = [(int(x/scale_factor), int(y/scale_factor), int(w/scale_factor), int(h/scale_factor), "FULL BODY") for (x, y, w, h) in full_bodies]
-                    
-                    cached_humans = humans
-                    for (x, y, w, h, label) in humans:
-                        cached_detected_human = True
-                        if w > cached_target_w:
-                            cached_target_x = x + w // 2
-                            cached_target_w = w
-        
         frame_count += 1
         
-        # === PERSISTENCE BUFFER & EMA SMOOTHING ===
-        if cached_detected_human:
-            # Target is visible — update smoothed values and reset persistence counter
-            frames_since_seen = 0
-            last_known_x = cached_target_x
-            last_known_w = cached_target_w
-            smoothed_x = SMOOTHING_ALPHA * cached_target_x + (1 - SMOOTHING_ALPHA) * smoothed_x
-            smoothed_w = SMOOTHING_ALPHA * cached_target_w + (1 - SMOOTHING_ALPHA) * smoothed_w
-        else:
-            frames_since_seen += 1
-            # Decay smoothed values toward center during persistence window
-            if frames_since_seen <= PERSISTENCE_FRAMES:
-                # Slowly drift toward last known position (don't snap to center)
-                smoothed_x = 0.95 * smoothed_x + 0.05 * last_known_x
-                smoothed_w = smoothed_w  # Hold width steady
-        
-        # Decide if we should "act" on detection (real detection OR within persistence window)
-        effectively_detected = cached_detected_human or (frames_since_seen <= PERSISTENCE_FRAMES)
-        
-        # Use smoothed values for motor control
-        target_x = int(smoothed_x)
-        target_w = int(smoothed_w)
-        
-        # Draw bounding boxes from cache
         if show_face_detection or follow_mode_active:
-            for (x, y, w, h, is_target, confidence, matched_view) in cached_faces:
-                if is_target:
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
-                    
-                    # Calculate estimated distance for rendering
-                    distance_cm = (KNOWN_FACE_WIDTH_CM * FOCAL_LENGTH) / w if w > 0 else 0
-                    
-                    # Append raw pixel widths to allow visual calibration
-                    label = f"TARGET | Dist: {distance_cm:.1f}cm | W: {w}px"
-                    if matched_view:
-                        label += f" ({matched_view.upper()})"
-                    cv2.putText(frame, label, (x, y-10),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                else:
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    cv2.putText(frame, f"OTHER ({confidence:.2f})", (x, y-10),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-                               
-            for (x, y, w, h, label) in cached_humans:
-                if len(target_person_encodings) > 0 and not cached_target_found:
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 255), 2)
-                    cv2.putText(frame, f"{label} (TRACKING)", (x, y-10),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-                elif len(target_person_encodings) == 0:
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                    cv2.putText(frame, label, (x, y-10),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-        
-        # Follow mode motor control (with hysteresis + rate limiting)
-        frames_since_dir_change += 1
-        
-        if follow_mode_active and effectively_detected and bot:
-            error = target_x - frame_center_x
+            # 1. MediaPipe Pose (every frame, fast)
+            mp_pos, mp_depth, mp_dist_cm, mp_results = None, None, None, None
+            if pose_tracker:
+                mp_pos, mp_depth, mp_dist_cm, mp_results = pose_tracker.analyze_pose(frame)
+                if mp_results and mp_results.pose_landmarks:
+                    pose_tracker.mp_drawing.draw_landmarks(
+                        frame, mp_results.pose_landmarks,
+                        pose_tracker.mp_holistic.POSE_CONNECTIONS,
+                        pose_tracker.mp_drawing.DrawingSpec(color=(0,255,0), thickness=1, circle_radius=1),
+                        pose_tracker.mp_drawing.DrawingSpec(color=(255,0,0), thickness=1))
+                    if mp_dist_cm:
+                        cv2.putText(frame, f"Dist: {int(mp_dist_cm)}cm", (10, frame_height-50),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
             
-            # === PROPORTIONAL SPEED CONTROL ===
-            max_error = frame_width // 2
-            error_ratio = min(abs(error) / max(max_error, 1), 1.0)
-            # Minimum turn is 25% of TURN_SPEED (gentler minimum)
-            proportional_turn = int(TURN_SPEED * 0.25 + TURN_SPEED * 0.75 * error_ratio)
+            # 2. Face ID check (every 3rd frame, 0.5x)
+            if frame_count % 3 == 0 and face_cascade is not None:
+                small = cv2.resize(frame, (0,0), fx=0.5, fy=0.5)
+                gray_s = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+                try:
+                    faces = face_cascade.detectMultiScale(gray_s, 1.1, 4, minSize=(30,30))
+                    found_target = False
+                    for (x,y,w,h) in faces:
+                        t,r,b,l = y*2,(x+w)*2,(y+h)*2,x*2
+                        cv2.rectangle(frame,(l,t),(r,b),(0,0,255),2)
+                        if target_person_encodings and face_recognition:
+                            rgb_s = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
+                            face_img = rgb_s[y:y+h, x:x+w]
+                            if face_img.size > 0:
+                                face_img = np.ascontiguousarray(face_img)
+                                encs = face_recognition.face_encodings(face_img)
+                                if encs and match_target_person:
+                                    match, conf, _ = match_target_person(encs[0], target_person_encodings, match_threshold)
+                                    if match:
+                                        found_target = True
+                                        cv2.putText(frame, f"TARGET {conf:.2f}", (l,t-10),
+                                                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
+                                        cv2.rectangle(frame,(l,t),(r,b),(0,255,0),2)
+                    if found_target:
+                        is_target_provisional = True
+                        last_face_seen_time = _time.time()
+                    else:
+                        is_target_provisional = False
+                except:
+                    pass
             
-            OPTIMAL_MIN_SIZE = 80
-            OPTIMAL_MAX_SIZE = 150
-            STOP_DISTANCE = 200
-            
-            if target_w < OPTIMAL_MIN_SIZE:
-                distance_ratio = max(0.0, 1.0 - (target_w / max(OPTIMAL_MIN_SIZE, 1)))
-                proportional_forward = int(AUTO_SPEED * 0.4 + AUTO_SPEED * 0.6 * distance_ratio)
-            else:
-                proportional_forward = int(AUTO_SPEED * 0.3)
-            
-            # === HYSTERESIS LOGIC ===
-            # Determine desired turn direction with hysteresis
-            if current_turn_dir == 0:
-                # Currently stopped — only START turning if error exceeds DEAD_ZONE
-                if error > DEAD_ZONE:
-                    desired_dir = 1   # RIGHT
-                elif error < -DEAD_ZONE:
-                    desired_dir = -1  # LEFT
-                else:
-                    desired_dir = 0   # CENTERED
-            else:
-                # Currently turning — only STOP if error drops below HYSTERESIS_ZONE
-                if abs(error) < HYSTERESIS_ZONE:
-                    desired_dir = 0   # Close enough, stop turning
-                elif error > 0:
-                    desired_dir = 1
-                else:
-                    desired_dir = -1
-            
-            # === RATE LIMITER ===
-            # Block direction changes if too soon (prevents rapid flip-flop)
-            if desired_dir != current_turn_dir:
-                if frames_since_dir_change < MIN_FRAMES_BETWEEN_DIR_CHANGE:
-                    desired_dir = current_turn_dir  # Force keep current direction
-                else:
-                    current_turn_dir = desired_dir
-                    frames_since_dir_change = 0
-            
-            # === EXECUTE MOTOR COMMAND ===
-            new_cmd = ""
-            if target_w > STOP_DISTANCE:
-                new_cmd = "STOP_CLOSE"
-                if new_cmd != last_motor_cmd:
-                    bot.stop()
-                active_drive_cmd = "STOP (TOO CLOSE)"
-                distance_status = "TOO CLOSE - STOPPED"
-                distance_color = (0, 0, 255)
-                current_turn_dir = 0
+            # 3. Driving Logic (3-zone from working reference)
+            if follow_mode_active and bot:
+                cmd = "STOP"
+                fwd_speed = AUTO_SPEED
+                back_speed = int(AUTO_SPEED * 0.7)
+                turn_speed = TURN_SPEED
                 
-            elif target_w > OPTIMAL_MAX_SIZE:
-                # Close enough — just orient
-                if desired_dir == 0:
-                    new_cmd = "STOP_OPTIMAL"
-                    if new_cmd != last_motor_cmd:
-                        bot.stop()
-                    active_drive_cmd = "STOP (OPTIMAL)"
-                    distance_status = "OPTIMAL - CENTERED"
-                    distance_color = (0, 255, 0)
-                elif desired_dir == 1:
-                    new_cmd = f"TURN_R_{proportional_turn}"
-                    if new_cmd != last_motor_cmd:
-                        bot.drive(-proportional_turn, proportional_turn)
-                    active_drive_cmd = "TURNING RIGHT"
-                    distance_status = "TURNING RIGHT"
-                    distance_color = (255, 255, 0)
-                else:
-                    new_cmd = f"TURN_L_{proportional_turn}"
-                    if new_cmd != last_motor_cmd:
-                        bot.drive(proportional_turn, -proportional_turn)
-                    active_drive_cmd = "TURNING LEFT"
-                    distance_status = "TURNING LEFT"
-                    distance_color = (255, 255, 0)
+                time_since_face = _time.time() - last_face_seen_time
+                is_locked = (time_since_face < 3.5)
+                
+                if is_locked and mp_pos:
+                    if mp_dist_cm:
+                        dist_error = abs(mp_dist_cm - 22)
+                        fwd_speed = int(np.clip(80 + dist_error, 80, 85))
+                        back_speed = int(np.clip(55 + dist_error, 55, 65))
+                    else:
+                        fwd_speed, back_speed = 85, 60
                     
-            elif target_w < OPTIMAL_MIN_SIZE:
-                # Far away — drive forward with steering
-                if desired_dir == 0:
-                    new_cmd = f"FWD_{proportional_forward}"
-                    if new_cmd != last_motor_cmd:
-                        bot.drive(proportional_forward, proportional_forward)
-                    active_drive_cmd = "MOVING FORWARD"
-                    distance_status = "MOVING FORWARD"
-                    distance_color = (0, 255, 255)
-                elif desired_dir == 1:
-                    new_cmd = f"FWD_R_{proportional_forward}"
-                    if new_cmd != last_motor_cmd:
-                        bot.drive(proportional_forward, proportional_forward // 2)
-                    active_drive_cmd = "FORWARD + RIGHT"
-                    distance_status = "FORWARD + RIGHT"
-                    distance_color = (0, 255, 255)
+                    if not is_target_provisional:
+                        cv2.putText(frame, f"LOCKED ({3.5-time_since_face:.1f}s)", (50,50),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
+                    
+                    if mp_depth == 'far':
+                        if mp_pos == 'center':
+                            bot.drive(fwd_speed, fwd_speed)
+                            cmd = f"FORWARD ({fwd_speed})"
+                        elif mp_pos == 'left':
+                            bot.drive(int(fwd_speed*0.5), fwd_speed)
+                            cmd = "FWD-LEFT"
+                        elif mp_pos == 'right':
+                            bot.drive(fwd_speed, int(fwd_speed*0.5))
+                            cmd = "FWD-RIGHT"
+                    elif mp_depth == 'near':
+                        bot.drive(-back_speed, -back_speed)
+                        cmd = f"BACKWARD ({back_speed})"
+                    else:
+                        if mp_pos == 'center':
+                            bot.stop()
+                            cmd = "STOP (OPTIMAL)"
+                        elif mp_pos == 'left':
+                            bot.drive(-turn_speed, turn_speed)
+                            cmd = "ROTATE-LEFT"
+                        elif mp_pos == 'right':
+                            bot.drive(turn_speed, -turn_speed)
+                            cmd = "ROTATE-RIGHT"
                 else:
-                    new_cmd = f"FWD_L_{proportional_forward}"
-                    if new_cmd != last_motor_cmd:
-                        bot.drive(proportional_forward // 2, proportional_forward)
-                    active_drive_cmd = "FORWARD + LEFT"
-                    distance_status = "FORWARD + LEFT"
-                    distance_color = (0, 255, 255)
-            else:
-                # Optimal distance zone
-                if desired_dir == 0:
-                    new_cmd = "STOP_ZONE"
-                    if new_cmd != last_motor_cmd:
+                    if last_driving_command != "STOP":
                         bot.stop()
-                    active_drive_cmd = "STOP (OPTIMAL)"
-                    distance_status = "OPTIMAL - CENTERED"
-                    distance_color = (0, 255, 0)
-                elif desired_dir == 1:
-                    new_cmd = f"ADJ_R_{proportional_turn}"
-                    if new_cmd != last_motor_cmd:
-                        bot.drive(-proportional_turn, proportional_turn)
-                    active_drive_cmd = "ADJUSTING RIGHT"
-                    distance_status = "ADJUSTING RIGHT"
-                    distance_color = (255, 255, 0)
-                else:
-                    new_cmd = f"ADJ_L_{proportional_turn}"
-                    if new_cmd != last_motor_cmd:
-                        bot.drive(proportional_turn, -proportional_turn)
-                    active_drive_cmd = "ADJUSTING LEFT"
-                    distance_status = "ADJUSTING LEFT"
-                    distance_color = (255, 255, 0)
-            
-            last_motor_cmd = new_cmd
-        
-        elif follow_mode_active and not effectively_detected and bot:
-            if last_motor_cmd != "SEARCH_STOP":
-                bot.stop()
-                last_motor_cmd = "SEARCH_STOP"
-            current_turn_dir = 0
-            distance_status = "SEARCHING..."
-            distance_color = (255, 165, 0)
+                    cmd = "STOP (NO TARGET)"
+                
+                active_drive_cmd = cmd
+                if frame_count % 10 == 0:
+                    print(f"🔍 Locked:{is_locked} | Dist:{int(mp_dist_cm) if mp_dist_cm else 0}cm | CMD:{cmd}")
+                if cmd != last_driving_command:
+                    last_driving_command = cmd
         
         # Visual overlay
         if follow_mode_active:
-            cv2.putText(frame, "FOLLOW MODE: ON", (10, 30),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-            
-            if effectively_detected and distance_status:
-                cv2.putText(frame, distance_status, (10, 60),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, distance_color, 2)
-                distance_text = f"Distance: {target_w}px"
-                cv2.putText(frame, distance_text, (10, 90),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                # Show persistence indicator when coasting on memory
-                if not cached_detected_human and frames_since_seen > 0:
-                    persist_text = f"MEMORY ({PERSISTENCE_FRAMES - frames_since_seen} frames left)"
-                    cv2.putText(frame, persist_text, (10, 120),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 200, 0), 1)
-            else:
-                cv2.putText(frame, "SEARCHING...", (10, 60),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 165, 0), 2)
+            cv2.putText(frame, "FOLLOW: ON", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
+            cv2.putText(frame, f"CMD: {active_drive_cmd}", (10, frame_height-20),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,0), 2)
         
         if len(target_person_encodings) > 0:
-            enrolled_text = f"Enrolled: {target_person_name} ({len(target_person_encodings)} views)"
-            cv2.putText(frame, enrolled_text, (10, frame_height - 20),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 136), 1)
+            cv2.putText(frame, f"Enrolled: {target_person_name} ({len(target_person_encodings)} views)",
+                       (frame_width-350, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,136), 1)
         
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
 
 
 # ============================================
@@ -849,8 +684,8 @@ def bicep_control():
 def _verify_face_with_haar(image):
     """Verify face is present using OpenCV Haar cascade (fallback when face_recognition unavailable)"""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(60, 60))
+    fc = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = fc.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(60, 60))
     return len(faces) > 0, len(faces)
 
 def _save_person_image(image, name, view):
