@@ -5,43 +5,38 @@ class RobotBridge:
     def __init__(self, esp32_port='/dev/ttyESP32', mega_port='/dev/ttyArduino', baud_rate=115200):
         self.esp32_ser = None
         self.mega_ser = None
-        self.esp32_port = esp32_port
-        self.mega_port = mega_port
-        self.baud = baud_rate
-        self.connect()
-
-    def connect_serial(self, port_name, dev_path):
-        """Attempt to connect a singular serial port"""
+        
+        # ESP32 — Drive Motors
         try:
-            ser = serial.Serial(dev_path, self.baud, timeout=0.1)
-            time.sleep(2)
-            ser.reset_input_buffer()
-            ser.reset_output_buffer()
-            print(f"✅ {port_name} Connected: {dev_path}")
-            return ser
+            self.esp32_ser = serial.Serial(esp32_port, baud_rate, timeout=1)
+            print(f"⚡ Connecting to ESP32 on {esp32_port}...")
+            time.sleep(2)  # Wait for Arduino/ESP32 reboot on serial connect
+            print("✅ ESP32 (Drive) Connected!")
         except Exception as e:
-            print(f"⚠️ {port_name} Connection Error: {e}")
-            return None
+            print(f"⚠️ ESP32 Connection Failed: {e}")
+            self.esp32_ser = None
+        
+        # Arduino Mega — Hands/Arms
+        try:
+            self.mega_ser = serial.Serial(mega_port, baud_rate, timeout=1)
+            print(f"⚡ Connecting to Arduino Mega on {mega_port}...")
+            time.sleep(2)
+            print("✅ Arduino Mega (Hands) Connected!")
+        except Exception as e:
+            print(f"⚠️ Arduino Mega Connection Failed: {e}")
+            self.mega_ser = None
 
-    def connect(self):
-        """Connect both microcontrollers"""
-        self.esp32_ser = self.connect_serial("ESP32 (Drive)", self.esp32_port)
-        self.mega_ser = self.connect_serial("Arduino Mega (Hands)", self.mega_port)
-
-    def drive(self, left, right):
+    def drive(self, left_speed, right_speed):
         """
-        Sends command: "LEFT,RIGHT\n"
+        Sends command: "LEFT,RIGHT\n" (e.g., "150,-150\n")
+        Non-blocking write — NO flush() to avoid stalling the frame loop.
         """
         if self.esp32_ser:
             try:
-                # Format: "150,150\n"
-                command = f"{int(left)},{int(right)}\n"
+                command = f"{int(left_speed)},{int(right_speed)}\n"
                 self.esp32_ser.write(command.encode('utf-8'))
-                self.esp32_ser.flush() # FORCE send immediately (No lag)
-            except:
-                # If write fails, try to reconnect once
-                print("⚠️ ESP32 Connection Lost... Reconnecting")
-                self.esp32_ser = self.connect_serial("ESP32 (Drive)", self.esp32_port)
+            except Exception as e:
+                print(f"⚠️ ESP32 Write Error: {e}")
 
     def stop(self):
         self.drive(0, 0)
@@ -51,10 +46,8 @@ class RobotBridge:
         if self.mega_ser:
             try:
                 self.mega_ser.write(f"{cmd}\n".encode('utf-8'))
-                self.mega_ser.flush()
-            except:
-                print(f"⚠️ Arduino Mega Connection Lost... Reconnecting")
-                self.mega_ser = self.connect_serial("Arduino Mega (Hands)", self.mega_port)
+            except Exception as e:
+                print(f"⚠️ Arduino Mega Write Error: {e}")
     
     # ============================================
     #   HAND CONTROLS
